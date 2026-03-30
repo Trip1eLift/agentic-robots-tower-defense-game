@@ -1587,6 +1587,31 @@ Check for: missing node errors, null references, WebSocket disconnects.
 If robots never act, check the backend logs for LLM errors.
 Do NOT proceed to the integration test task until a basic loop is confirmed working. -->
 
+<!-- ============================================ -->
+<!-- VP CONDITION: "IS IT FUN?" GATE              -->
+<!-- ============================================ -->
+### MANDATORY STOP: Fun Evaluation
+
+Before proceeding to Task 12, play the game 5 times with the real LLM (not mock mode). Answer these questions honestly:
+
+1. Do the robots make decisions that feel interesting or surprising?
+2. Do different player instructions produce noticeably different robot behavior?
+3. Does the 5-15 second LLM latency feel acceptable with the auto-attack system?
+4. Would you play this again to try different prompt strategies?
+
+If the answer to questions 1-2 is NO, the core mechanic does not work. Options:
+- Try a different LLM model (smaller = faster but dumber, larger = smarter but slower)
+- Simplify the action space (only move and attack, remove retreat/heal/idle)
+- Add more few-shot examples to the prompt
+- Pivot to a simpler AI system
+
+If the answer to question 3 is NO:
+- Reduce to 2 robots (Vanguard + Striker) to halve LLM queue time
+- Test Phi-3 mini (faster inference, smaller model)
+- Increase semaphore to 2 if GPU VRAM allows
+
+Do NOT proceed to Task 12 without positive answers to at least questions 1 and 2.
+
 ---
 
 ## Task 12: End-to-End Integration Test

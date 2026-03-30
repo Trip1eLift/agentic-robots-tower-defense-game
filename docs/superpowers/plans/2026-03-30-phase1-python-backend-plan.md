@@ -79,6 +79,19 @@ data/
 
 ---
 
+## VP/Director Conditions (Must Address During Implementation)
+
+### Condition 1: LLM Eval Before Task 3
+Before writing Pydantic models, run 50 sample prompts through Dolphin-Mistral 7B with the exact prompt template from the spec. Measure JSON parse success rate. Add `format: "json"` to the Ollama `chat()` call options. If compliance is below 70% even with JSON mode, evaluate Mistral 7B Instruct, Phi-3 mini, or Gemma 2B as alternatives. Document results.
+
+### Condition 2: Measure Latency After Task 10
+After the WebSocket server is working, run a latency benchmark: 4 robots, 8 zombies worth of events, Ollama on target hardware. Record time from event fire to action execution per robot. If average exceeds 8 seconds, reduce to 2 robot classes (Vanguard + Striker) or test a smaller/faster model.
+
+### Condition 3: Document Architecture Decision
+The Python backend exists as a separate process because: (a) the developer is more proficient in Python than GDScript, (b) Python's async ecosystem and Pydantic provide robust LLM prompt building and response parsing, (c) the same backend serves Phase 2 companion chat without architecture changes, (d) pytest enables automated testing of the LLM pipeline which is the highest-risk component. The alternative (Godot calling Ollama HTTP directly) was considered but rejected because it would require reimplementing prompt building, action parsing, and event queuing in GDScript — a language the developer is learning.
+
+---
+
 ## Task 1: Project Setup
 
 **Files:**
@@ -1328,7 +1341,8 @@ class OllamaClient:
             self._client.chat(
                 model=self.MODEL,
                 messages=[{"role": "user", "content": prompt}],
-                options={"temperature": 0.3, "num_predict": 200}
+                options={"temperature": 0.3, "num_predict": 200},
+                format="json"
             ),
             timeout=30,
         )
