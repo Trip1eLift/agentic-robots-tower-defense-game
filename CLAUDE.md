@@ -81,9 +81,36 @@ All 5 agents must use Opus model for highest quality feedback.
 
 ## Implementation Workflow
 
-After the review pipeline approves, implementation is executed by **implementor agents** working in parallel. These agents move fast, explore options, and ship working code.
+Implementation follows an **implement → review → fix → iterate** cycle. Implementors build a chunk of work, then the full 5-stage review pipeline runs on it, issues are addressed, and the cycle repeats.
 
-### Principles
+### The Cycle
+
+```
+┌─────────────────────────────────────────────────────────┐
+│  1. IMPLEMENT                                           │
+│     Implementor agents build the next chunk of work     │
+│     (1-3 plan tasks per cycle). Move fast, explore      │
+│     options, ship working code.                         │
+├─────────────────────────────────────────────────────────┤
+│  2. REVIEW                                              │
+│     Run full 5-stage review pipeline on the new code:   │
+│     Stages 1-4 in parallel → fix → Stage 5 (VP)        │
+│     Review scope: only the NEW code from this cycle     │
+├─────────────────────────────────────────────────────────┤
+│  3. FIX                                                 │
+│     Address all issues from reviewers.                  │
+│     Implementors make the changes.                      │
+├─────────────────────────────────────────────────────────┤
+│  4. ITERATE                                             │
+│     Commit, move to next chunk. Repeat from step 1.     │
+└─────────────────────────────────────────────────────────┘
+```
+
+### Chunk Size
+- Each cycle covers **1-3 plan tasks** — small enough to review effectively, large enough to make progress.
+- At playtest gates, the cycle pauses for a full playthrough before continuing.
+
+### Implementor Principles
 - **Speed over perfection.** Ship working code, iterate, fix forward. Don't gold-plate.
 - **Parallel by default.** Independent tasks run simultaneously. Use git worktrees or separate branches when agents work on different subsystems.
 - **Explore, don't assume.** When a plan step is ambiguous or an approach isn't working, try 2-3 alternatives before asking. Pick what works.
