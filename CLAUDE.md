@@ -155,7 +155,12 @@ Every chunk of implemented code passes through ALL 5 stages. Stages 1-4 run in p
 - **All commits go to the feature branch. NEVER to main.**
 - If no feature branch exists yet, create one BEFORE committing: `git checkout -b feat/<feature-name>`
 - Push to remote with `-u` flag on first push.
-- Main is ONLY updated via merged pull requests after a full Harness Engineering cycle.
+- **After the review gauntlet passes**, create a PR with summary and description using:
+  ```
+  "/c/Program Files/GitHub CLI/gh.exe" pr create --title "..." --body "..."
+  ```
+- PRs are auto-merged after VP approval (no manual approval needed). The 5-stage gauntlet IS the approval process.
+- After merge, switch back to main, pull, and start the next cycle on a new branch.
 - Update task progress.
 - Move to the next chunk. Return to Stage 1.
 
