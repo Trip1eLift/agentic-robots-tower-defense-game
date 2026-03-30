@@ -105,7 +105,61 @@ Add these autoload singletons (create empty .gd files first):
 
 `Project > Project Settings > Application > Run > Main Scene` → set to `res://scenes/Main.tscn`
 
-- [ ] **Step 5: Commit**
+- [ ] **Step 5: Copy data directory into Godot project**
+
+The `data/` directory lives at the repo root, but Godot's `res://` cannot use `..` path traversal. Copy (or symlink) it so Godot can access the JSON files:
+
+```bash
+# Option A: Symlink (recommended for development — changes stay in sync)
+# On Linux/Mac:
+ln -s ../../data godot/data
+# On Windows (requires admin or Developer Mode):
+mklink /D godot\data ..\..\data
+
+# Option B: Copy (simpler, but must re-copy after data changes)
+cp -r data/ godot/data/
+```
+
+Add `godot/data/` to `.gitignore` if using a symlink so the duplicate isn't committed:
+```
+# .gitignore
+godot/data/
+```
+
+- [ ] **Step 6: Create placeholder sprite assets**
+
+Scenes that use `preload` or `Sprite2D` will fail if the referenced image files don't exist. Create simple colored rectangles in `godot/assets/placeholder/`:
+
+In the Godot editor:
+1. Create the directory `res://assets/placeholder/`
+2. For each placeholder, create a new `Image` resource via script or use **Editor > Tools > Create Placeholder Sprites** (if available). Alternatively, create them manually:
+
+Open Godot's script editor and run this one-time tool script (`@tool` script or paste into the debugger console):
+
+```gdscript
+# Run once from Godot's script editor to generate placeholder sprites
+func _create_placeholder(filename: String, color: Color, size: Vector2i = Vector2i(32, 32)) -> void:
+	var img = Image.create(size.x, size.y, false, Image.FORMAT_RGBA8)
+	img.fill(color)
+	img.save_png("res://assets/placeholder/" + filename)
+
+func _ready():
+	DirAccess.make_dir_recursive_absolute("res://assets/placeholder")
+	_create_placeholder("robot_architect.png", Color(0.2, 0.6, 1.0))  # blue
+	_create_placeholder("robot_vanguard.png", Color(1.0, 0.3, 0.3))   # red
+	_create_placeholder("robot_striker.png", Color(1.0, 0.8, 0.2))    # yellow
+	_create_placeholder("robot_medic.png", Color(0.3, 1.0, 0.4))      # green
+	_create_placeholder("zombie.png", Color(0.5, 0.0, 0.5))           # purple
+	_create_placeholder("base.png", Color(0.8, 0.8, 0.8), Vector2i(64, 64))  # gray, larger
+	print("Placeholder sprites created in res://assets/placeholder/")
+```
+
+After running, verify that `godot/assets/placeholder/` contains 6 `.png` files. Then assign these sprites in the scenes:
+- `Robot.tscn` > `Sprite2D` > Texture: `res://assets/placeholder/robot_architect.png` (the robot script can swap the texture at runtime based on class)
+- `Zombie.tscn` > `Sprite2D` > Texture: `res://assets/placeholder/zombie.png`
+- `Map.tscn` > `Base` > `Sprite2D` > Texture: `res://assets/placeholder/base.png`
+
+- [ ] **Step 7: Commit**
 
 ```bash
 git add godot/
@@ -136,7 +190,7 @@ func _ready() -> void:
 	_load_missions()
 
 func _load_robots() -> void:
-	var dir = DirAccess.open("res://../../data/robots/archetypes")
+	var dir = DirAccess.open("res://data/robots/archetypes")
 	if dir == null:
 		push_error("ConfigLoader: cannot open data/robots/archetypes")
 		return
@@ -144,39 +198,39 @@ func _load_robots() -> void:
 	var file_name = dir.get_next()
 	while file_name != "":
 		if file_name.ends_with(".json"):
-			var cfg = _load_json("res://../../data/robots/archetypes/" + file_name)
+			var cfg = _load_json("res://data/robots/archetypes/" + file_name)
 			if cfg:
 				_robots[cfg["id"]] = cfg
 		file_name = dir.get_next()
 
 func _load_maps() -> void:
-	var dir = DirAccess.open("res://../../data/maps")
+	var dir = DirAccess.open("res://data/maps")
 	if dir == null:
 		return
 	dir.list_dir_begin()
 	var file_name = dir.get_next()
 	while file_name != "":
 		if file_name.ends_with(".json"):
-			var cfg = _load_json("res://../../data/maps/" + file_name)
+			var cfg = _load_json("res://data/maps/" + file_name)
 			if cfg:
 				_maps[cfg["id"]] = cfg
 		file_name = dir.get_next()
 
 func _load_enemies() -> void:
-	var dir = DirAccess.open("res://../../data/enemies")
+	var dir = DirAccess.open("res://data/enemies")
 	if dir == null:
 		return
 	dir.list_dir_begin()
 	var file_name = dir.get_next()
 	while file_name != "":
 		if file_name.ends_with(".json"):
-			var cfg = _load_json("res://../../data/enemies/" + file_name)
+			var cfg = _load_json("res://data/enemies/" + file_name)
 			if cfg:
 				_enemies[cfg["id"]] = cfg
 		file_name = dir.get_next()
 
 func _load_missions() -> void:
-	_load_missions_from_dir("res://../../data/campaign/chapter_01")
+	_load_missions_from_dir("res://data/campaign/chapter_01")
 
 func _load_missions_from_dir(path: String) -> void:
 	var dir = DirAccess.open(path)
@@ -260,8 +314,15 @@ const SERVER_URL = "ws://localhost:8765/ws"
 
 var _socket := WebSocketPeer.new()
 var _is_connected := false
+var _reconnect_timer: Timer = null
 
 func _ready() -> void:
+	# Create a one-shot reconnect timer (avoids await in _process)
+	_reconnect_timer = Timer.new()
+	_reconnect_timer.wait_time = 2.0
+	_reconnect_timer.one_shot = true
+	_reconnect_timer.timeout.connect(_connect_to_server)
+	add_child(_reconnect_timer)
 	_connect_to_server()
 
 func _connect_to_server() -> void:
@@ -284,9 +345,9 @@ func _process(_delta: float) -> void:
 	elif state == WebSocketPeer.STATE_CLOSED and _is_connected:
 		_is_connected = false
 		disconnected.emit()
-		# Reconnect after 2 seconds
-		await get_tree().create_timer(2.0).timeout
-		_connect_to_server()
+		# Schedule reconnect via Timer instead of await (safe in _process)
+		if _reconnect_timer.is_stopped():
+			_reconnect_timer.start()
 
 func _handle_message(raw: String) -> void:
 	var data = JSON.parse_string(raw)
@@ -496,6 +557,7 @@ Create new scene:
     - `CollisionShape2D` (circle, radius 200)
   - `Label` rename `SpeechLabel` (shows robot's `reason` text)
   - `Timer` rename `SpeechTimer` (hides speech after 3s)
+  - `Timer` rename `AttackTimer` (wait_time=1.0, one_shot=false — fires repeated attacks while action is "attack"/"snipe")
 
 Save as `res://scenes/robots/Robot.tscn`.
 
@@ -512,6 +574,7 @@ signal event_detected(robot_id: String, event_type: String, event_detail: String
 @onready var perception_area: Area2D = $PerceptionArea
 @onready var speech_label: Label = $SpeechLabel
 @onready var speech_timer: Timer = $SpeechTimer
+@onready var attack_timer: Timer = $AttackTimer
 
 var _config: Dictionary = {}
 var _health: int = 0
@@ -536,10 +599,15 @@ func setup(config: Dictionary, map: Node) -> void:
 	_ammo = stats["ammo"]
 	_speed = stats["speed"] * 20.0  # convert stat to pixels/sec
 	robot_id = config["id"]
+	add_to_group("robots")  # GD-7: register in robots group for ally detection
 	speech_label.text = ""
 	speech_timer.wait_time = 3.0
 	speech_timer.one_shot = true
 	speech_timer.timeout.connect(func(): speech_label.text = "")
+	# GD-6: AttackTimer for continuous auto-attack while action is "attack"/"snipe"
+	attack_timer.wait_time = 1.0
+	attack_timer.one_shot = false
+	attack_timer.timeout.connect(_on_attack_timer)
 	perception_area.body_entered.connect(_on_body_entered_perception)
 	perception_area.body_exited.connect(_on_body_exited_perception)
 	WebSocketClient.action_received.connect(_on_action_received)
@@ -553,6 +621,7 @@ func _physics_process(delta: float) -> void:
 	if not is_alive():
 		return
 	_execute_movement()
+	_check_enemy_in_range()  # GD-8: fire ENEMY_IN_RANGE event
 
 func _execute_movement() -> void:
 	if nav_agent.is_navigation_finished():
@@ -562,8 +631,22 @@ func _execute_movement() -> void:
 	velocity = direction * _speed
 	move_and_slide()
 
+## GD-8: Check if any enemy is within attack range (shorter than perception range)
+## and fire ENEMY_IN_RANGE event so the backend can decide to engage.
+func _check_enemy_in_range() -> void:
+	var attack_range = _config.get("base_stats", {}).get("attack_range", 120.0)
+	for enemy in _enemies_in_perception:
+		if is_instance_valid(enemy):
+			var dist = global_position.distance_to(enemy.global_position)
+			if dist <= attack_range:
+				_fire_event("ENEMY_IN_RANGE",
+					str(GameManager.get_enemy_id(enemy)) + " at distance " + str(int(dist)))
+				return  # fire once per physics frame at most
+
 func execute_action(action: Dictionary) -> void:
 	_current_action = action
+	# Stop attack timer by default; only restart if action is attack/snipe
+	attack_timer.stop()
 	match action.get("action", "idle"):
 		"move", "retreat":
 			var destination_id = action.get("destination", "")
@@ -571,9 +654,11 @@ func execute_action(action: Dictionary) -> void:
 				var target_pos = _map.get_strategic_position(destination_id)
 				nav_agent.target_position = target_pos
 		"attack", "snipe":
+			# GD-6: LLM sets STRATEGY; robot auto-attacks on a timer
 			_target_enemy = _find_enemy_by_id(action.get("target_id", -1))
 			if _target_enemy:
-				_perform_attack()
+				_perform_attack()         # fire immediately
+				attack_timer.start()      # then keep firing on timer
 		"build":
 			_start_build(action)
 		"heal":
@@ -583,6 +668,20 @@ func execute_action(action: Dictionary) -> void:
 	var reason = action.get("reason", "")
 	if reason:
 		_show_speech(reason)
+
+## GD-6: Called repeatedly by AttackTimer while action is "attack"/"snipe"
+func _on_attack_timer() -> void:
+	var action_name = _current_action.get("action", "idle")
+	if action_name not in ["attack", "snipe"]:
+		attack_timer.stop()
+		return
+	# Re-acquire target if it died
+	if _target_enemy == null or not is_instance_valid(_target_enemy):
+		_target_enemy = _find_enemy_by_id(_current_action.get("target_id", -1))
+	if _target_enemy == null or not is_instance_valid(_target_enemy):
+		attack_timer.stop()
+		return
+	_perform_attack()
 
 func _perform_attack() -> void:
 	if _target_enemy == null or not is_instance_valid(_target_enemy):
@@ -641,13 +740,23 @@ func _build_local_context() -> Dictionary:
 	var enemies = []
 	for e in _enemies_in_perception:
 		if is_instance_valid(e):
-			enemies.append({"id": e.get_instance_id(), "type": "zombie",
+			# INT-1: Use sequential integer IDs instead of Godot instance IDs
+			enemies.append({"id": GameManager.get_enemy_id(e), "type": "zombie",
 				"position": [e.global_position.x, e.global_position.y],
 				"health": e.get_health() if e.has_method("get_health") else 50})
+	# GD-7: Populate nearby_allies from "robots" group
+	var allies = []
+	for r in get_tree().get_nodes_in_group("robots"):
+		if is_instance_valid(r) and r != self and r.has_method("is_alive") and r.is_alive():
+			var dist = global_position.distance_to(r.global_position)
+			if dist < 300:  # only report allies within a useful range
+				allies.append({"id": r.robot_id, "class": r._config.get("class", "unknown"),
+					"position": [r.global_position.x, r.global_position.y],
+					"health": r.get_health()})
 	var positions = _map.get_all_strategic_positions() if _map else []
 	return {
 		"nearby_enemies": enemies,
-		"nearby_allies": [],
+		"nearby_allies": allies,
 		"structures": [],
 		"recent_events": _recent_events.duplicate(),
 		"strategic_positions": positions
@@ -658,10 +767,11 @@ func _push_recent_event(event_str: String) -> void:
 	if _recent_events.size() > MAX_RECENT_EVENTS:
 		_recent_events.pop_front()
 
-func _find_enemy_by_id(instance_id: int) -> Node2D:
-	for enemy in _enemies_in_perception:
-		if is_instance_valid(enemy) and enemy.get_instance_id() == instance_id:
-			return enemy
+## INT-1: Look up enemy by sequential integer ID (via GameManager mapping)
+func _find_enemy_by_id(enemy_id: int) -> Node2D:
+	var enemy = GameManager.get_enemy_by_id(enemy_id)
+	if enemy and is_instance_valid(enemy) and enemy in _enemies_in_perception:
+		return enemy
 	return null
 
 func _show_speech(text: String) -> void:
@@ -670,6 +780,9 @@ func _show_speech(text: String) -> void:
 
 func get_health() -> int:
 	return _health
+
+func get_ammo() -> int:
+	return _ammo
 ```
 
 - [ ] **Step 3: Manual test**
@@ -718,7 +831,8 @@ var _health: int = 50
 var _speed: float = 60.0
 var _damage: int = 8
 var _attack_range: float = 40.0
-var _target: Node2D = null  # the base node
+var _base_target: Node2D = null  # the base node (always the fallback)
+var _current_target: Node2D = null  # current attack target (robot or base)
 
 func setup(config: Dictionary, target: Node2D) -> void:
 	var stats = config["stats"]
@@ -726,33 +840,57 @@ func setup(config: Dictionary, target: Node2D) -> void:
 	_speed = stats["speed"] * 20.0
 	_damage = stats["damage"]
 	_attack_range = stats["attack_range"]
-	_target = target
-	nav_agent.target_position = _target.global_position
+	_base_target = target
+	_current_target = target
+	nav_agent.target_position = _base_target.global_position
 	attack_timer.timeout.connect(_on_attack_timer)
 
 func _physics_process(_delta: float) -> void:
-	if _target == null or not is_instance_valid(_target):
+	# Check for robots in melee range — attack them instead of walking past
+	_current_target = _find_nearby_robot()
+	if _current_target == null:
+		_current_target = _base_target
+
+	if _current_target == null or not is_instance_valid(_current_target):
 		return
-	var dist = global_position.distance_to(_target.global_position)
+
+	var dist = global_position.distance_to(_current_target.global_position)
 	if dist <= _attack_range:
 		velocity = Vector2.ZERO
 		return
+
+	# Navigate toward current target (robot or base)
+	nav_agent.target_position = _current_target.global_position
 	if not nav_agent.is_navigation_finished():
 		var next_pos = nav_agent.get_next_path_position()
 		velocity = (next_pos - global_position).normalized() * _speed
-	else:
-		nav_agent.target_position = _target.global_position
 	move_and_slide()
 
+## Find the closest alive robot within attack range (melee).
+## Returns null if no robot is close enough to hit.
+func _find_nearby_robot() -> Node2D:
+	var closest: Node2D = null
+	var closest_dist := _attack_range  # only consider robots within melee range
+	for robot in get_tree().get_nodes_in_group("robots"):
+		if not is_instance_valid(robot):
+			continue
+		if robot.has_method("is_alive") and not robot.is_alive():
+			continue
+		var dist = global_position.distance_to(robot.global_position)
+		if dist < closest_dist:
+			closest_dist = dist
+			closest = robot
+	return closest
+
 func _on_attack_timer() -> void:
-	if _target == null or not is_instance_valid(_target):
+	if _current_target == null or not is_instance_valid(_current_target):
 		return
-	var dist = global_position.distance_to(_target.global_position)
+	var dist = global_position.distance_to(_current_target.global_position)
 	if dist <= _attack_range:
-		if _target.has_method("take_base_damage"):
-			_target.take_base_damage(_damage)
-		elif _target.has_method("take_damage"):
-			_target.take_damage(_damage)
+		if _current_target.has_method("take_base_damage"):
+			_current_target.take_base_damage(_damage)
+		elif _current_target.has_method("take_damage"):
+			_current_target.take_damage(_damage)
 
 func take_damage(amount: int) -> void:
 	_health = max(0, _health - amount)
@@ -804,6 +942,10 @@ var _current_wave: int = 0
 var _kill_count: int = 0
 var _commander_broadcast: String = ""
 var _is_wave_active: bool = false
+# INT-1: Sequential enemy ID system (small integers for LLM readability)
+var _next_enemy_id: int = 1
+var _enemy_id_map: Dictionary = {}   # Node -> int
+var _id_enemy_map: Dictionary = {}   # int -> Node
 
 func setup_mission(mission_id: String, map: Node) -> void:
 	_map = map
@@ -812,6 +954,10 @@ func setup_mission(mission_id: String, map: Node) -> void:
 	_kill_count = 0
 	_robots.clear()
 	_enemies.clear()
+	# INT-1: Reset enemy ID tracking
+	_next_enemy_id = 1
+	_enemy_id_map.clear()
+	_id_enemy_map.clear()
 
 func spawn_robots(robot_configs: Array, player_instructions: Dictionary) -> void:
 	for i in range(robot_configs.size()):
@@ -847,31 +993,46 @@ func _spawn_wave_enemies(wave_data: Dictionary) -> void:
 			zombie.setup(enemy_config, _map.base_node)
 			zombie.died.connect(_on_enemy_died)
 			_enemies.append(zombie)
+			# INT-1: Assign sequential integer ID
+			var eid = _next_enemy_id
+			_next_enemy_id += 1
+			_enemy_id_map[zombie] = eid
+			_id_enemy_map[eid] = zombie
 			spawn_index += 1
 			await get_tree().create_timer(0.2).timeout  # stagger spawning
 
 func _on_enemy_died(enemy: Node2D) -> void:
+	# INT-1: Clean up ID mapping
+	var eid = _enemy_id_map.get(enemy, -1)
+	_enemy_id_map.erase(enemy)
+	if eid != -1:
+		_id_enemy_map.erase(eid)
 	_enemies.erase(enemy)
 	_kill_count += 1
 	kill_count_changed.emit(_kill_count)
-	_notify_robots_of_kill(enemy)
+	_notify_robots_of_kill(enemy, eid)
 	if _enemies.is_empty() and _is_wave_active:
 		_is_wave_active = false
 		_current_wave += 1
 		wave_completed.emit(_current_wave)
 
-func _notify_robots_of_kill(enemy: Node2D) -> void:
+func _notify_robots_of_kill(enemy: Node2D, enemy_id: int) -> void:
 	for robot in _robots:
 		if is_instance_valid(robot) and robot.has_method("is_alive") and robot.is_alive():
 			var dist = robot.global_position.distance_to(enemy.global_position)
 			if dist < 300:
-				# Trigger a think via a short state update — robot will re-evaluate
-				WebSocketClient.send_state_update(
-					robot.robot_id,
-					robot.get_health(),
-					robot._ammo,
-					robot.global_position
-				)
+				# GD-11: Fire ENEMY_ELIMINATED event instead of state_update
+				# GD-10: Use get_ammo() instead of accessing robot._ammo directly
+				robot._fire_event("ENEMY_ELIMINATED",
+					"enemy " + str(enemy_id) + " killed at " + str(enemy.global_position))
+
+## INT-1: Get the sequential integer ID for an enemy node
+func get_enemy_id(enemy: Node2D) -> int:
+	return _enemy_id_map.get(enemy, -1)
+
+## INT-1: Get the enemy node for a sequential integer ID
+func get_enemy_by_id(enemy_id: int) -> Node2D:
+	return _id_enemy_map.get(enemy_id, null)
 
 func on_base_destroyed() -> void:
 	_is_wave_active = false
@@ -950,6 +1111,7 @@ signal briefing_confirmed(player_instructions: Dictionary)
 var _robot_configs: Array = []
 var _instruction_inputs: Dictionary = {}  # robot_id -> TextEdit
 var _max_chars: Dictionary = {}           # robot_id -> int
+var _updating: bool = false               # re-entrancy guard for _on_text_changed
 
 func setup(mission_id: String) -> void:
 	var mission = ConfigLoader.get_mission(mission_id)
@@ -987,11 +1149,15 @@ func _build_robot_cards() -> void:
 		_instruction_inputs[config["id"]] = input
 
 func _on_text_changed(robot_id: String, input: TextEdit, char_label: Label, max_chars: int) -> void:
+	if _updating:
+		return
+	_updating = true
 	var current_len = input.text.length()
 	char_label.text = str(current_len) + " / " + str(max_chars) + " chars"
 	if current_len > max_chars:
 		input.text = input.text.left(max_chars)
 		input.set_caret_column(max_chars)
+	_updating = false
 
 func _on_start_pressed() -> void:
 	var instructions: Dictionary = {}
@@ -1148,7 +1314,11 @@ func _load_save() -> void:
 	if data == null:
 		return
 	_currency = data.get("currency", 0)
-	_completed_missions = Array(data.get("completed_missions", []))
+	# GD-9: JSON parse returns untyped Array; convert each element to String
+	var raw_missions = data.get("completed_missions", [])
+	_completed_missions.clear()
+	for m in raw_missions:
+		_completed_missions.append(str(m))
 ```
 
 - [ ] **Step 2: Add CampaignManager to autoloads**
