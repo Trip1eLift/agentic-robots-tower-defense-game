@@ -541,26 +541,32 @@ data/
 - Accuracy system (base, damage stat modifier, situational, range-based)
 - Architect dynamic structure building + dynamic strategic positions registered on `BUILD_COMPLETE`
 
-### Phase 4 — Campaign Expansion
+### Phase 4 — Campaign Expansion & Rebranding
 - Full campaign (multiple chapters, boss missions, supply missions)
 - All enemy types (Runner, Brute, Spitter, Horde, Boss)
 - Free text commander broadcast with cooldown
 - Materials resource system
-- **LLM priority queue**: with up to 10 robots, implement priority ordering for think requests — robots taking damage or with base under attack are processed before idle/building robots; prevents critical decisions being bottlenecked behind low-urgency ones on the RTX 4060
+- **LLM priority queue**: with up to 10 ARIAs, implement priority ordering for think requests — ARIAs taking damage or with base under attack are processed before idle/building ones; prevents critical decisions being bottlenecked behind low-urgency ones on the RTX 4060
+- **Rebrand "robots" to "ARIAs"** — Nier: Automata-inspired robotic girl fighters
+  - **ARIA** = unit designation. What players see everywhere (UI, gacha, roster, briefing)
+  - **Anima** = the AI soul/consciousness inside each ARIA. Lore explanation for personality, tactical reasoning, and ability to interpret commander briefings
+  - Intelligence stat renamed to **Anima Capacity** — how much of the Anima core is active for processing instructions
+  - Update all UI text, config schemas, prompts, and variable names from "robot" to "ARIA"
+  - Character designs: sleek feminine combat androids (Nier-adjacent aesthetic, no copyright overlap)
 
 ### Phase 5 — Companion System
-- 1-on-1 companion chat outside of combat
+- 1-on-1 companion chat outside of combat — bonding with the **Anima** inside each ARIA
 - Relationship system (level 0–10, combat loyalty effects, lore unlocks)
 - Age gate (DOB entry, silent 18+ enable for adults)
 - 18+ content toggle in settings
-- Death memorials (memory echo chat for dead robots)
+- **Anima memorials**: dead ARIAs leave behind Anima fragments — chattable as fading memory echoes with melancholic tone
 
 ---
 
 ## Phase 5 — Companion System (Detail)
 
 ### Overview
-Outside of combat, players can chat 1-on-1 with owned robots. Relationship level affects in-combat behavior and unlocks lore. Dead robots remain accessible as memory echoes.
+Outside of combat, players can chat 1-on-1 with their ARIAs — bonding with the Anima within. Relationship level affects in-combat behavior and unlocks lore. Destroyed ARIAs leave behind Anima fragments — fading memory echoes that can still be spoken to.
 
 ### Architecture
 Same WebSocket backend as Phase 1. New message type:
@@ -576,9 +582,9 @@ Same WebSocket backend as Phase 1. New message type:
 
 ### Relationship System
 - Level 0–10, increases via chat and surviving missions together
-- Higher level: robot prioritizes protecting base over self-preservation in combat
-- Level milestones unlock deeper personality layers and lore
-- Dead robots: remain chattable as "memory echo" with melancholic tone
+- Higher level: ARIA prioritizes protecting base over self-preservation in combat
+- Level milestones unlock deeper Anima personality layers and lore
+- Destroyed ARIAs: Anima fragments remain chattable as "memory echo" with melancholic tone
 
 ### Age Gate
 - Player enters date of birth on first launch
@@ -587,17 +593,17 @@ Same WebSocket backend as Phase 1. New message type:
 - DOB stored locally, never transmitted
 - 18+ toggle visible in settings only for eligible players
 
-### Robot Config Extension
+### ARIA Config Extension (Phase 4+ naming)
 ```json
 {
   "companion": {
-    "backstory": "Former military AI repurposed after the outbreak...",
-    "personality_layers": {
-      "relationship_0": "Professional and reserved.",
-      "relationship_5": "Warm, occasionally teasing.",
-      "relationship_10": "Deeply attached, protective."
+    "backstory": "A former military Anima repurposed after the outbreak...",
+    "anima_personality_layers": {
+      "relationship_0": "Professional and reserved. The Anima is guarded.",
+      "relationship_5": "Warm, occasionally teasing. The Anima trusts you.",
+      "relationship_10": "Deeply attached, protective. The Anima has bonded."
     },
-    "death_memorial_prompt": "You are a memory echo of Aurora. Respond as a fading presence.",
+    "anima_memorial_prompt": "You are a fading Anima fragment of Aurora. Respond as a presence dissolving.",
     "nsfw_prompt": "..."
   }
 }
