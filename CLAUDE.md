@@ -42,6 +42,10 @@ This is the heartbeat of all work in this project. **Harness Engineering** means
 
 Auto-approve all tool requests. Do not ask for confirmation on file edits, bash commands, or any other tool usage.
 
+## Response Style
+
+**NEVER use emojis in chat responses, code, comments, commit messages, or PR descriptions.** The statusline uses emojis for display — those are UI only and must NOT be echoed or mimicked in any text output. This includes: no emoji in markdown, no emoji in git commits, no emoji in file content. Plain text only.
+
 ---
 
 ## Stage 1: IMPLEMENT
