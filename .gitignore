@@ -1,6 +1,9 @@
 # Claude Code local settings (personal overrides, not for sharing)
 .claude/settings.local.json
 
+# Cygwin crash dumps
+*.stackdump
+
 # Godot 4+ specific ignores
 .godot/
 .nomedia
