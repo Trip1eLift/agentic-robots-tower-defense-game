@@ -79,6 +79,47 @@ Before any code is implemented, all plans and specs must pass through this 5-sta
 
 All 5 agents must use Opus model for highest quality feedback.
 
+## Implementation Workflow
+
+After the review pipeline approves, implementation is executed by **implementor agents** working in parallel. These agents move fast, explore options, and ship working code.
+
+### Principles
+- **Speed over perfection.** Ship working code, iterate, fix forward. Don't gold-plate.
+- **Parallel by default.** Independent tasks run simultaneously. Use git worktrees or separate branches when agents work on different subsystems.
+- **Explore, don't assume.** When a plan step is ambiguous or an approach isn't working, try 2-3 alternatives before asking. Pick what works.
+- **Communicate via code.** Agents share state through committed code, not messages. If Agent A needs Agent B's interface, Agent A reads the code Agent B wrote.
+- **Fail fast, surface early.** If something doesn't work (LLM output quality, Godot API mismatch, performance issue), flag it immediately. Don't bury it.
+- **Follow the plan, but adapt.** Plans are guides, not scripture. If a plan step is wrong or a better approach is discovered during implementation, deviate and document why.
+
+### Agent Roles
+
+**Backend Implementor**
+- Owns: `backend/`, `data/`, Python tests
+- Builds: FastAPI server, Ollama client, prompt builder, action parser, mock LLM, event queue
+- Runs tests after every task. All tests must pass before committing.
+
+**Godot Implementor**
+- Owns: `godot/`, scene files, GDScript
+- Builds: Map, robots, enemies, UI, game loop, WebSocket client
+- Manual tests each scene after creation. Verifies no script errors in Godot Output panel.
+
+**Integration Implementor**
+- Owns: End-to-end testing, cross-system bugs
+- Runs after both backend and Godot reach a connectable state
+- Tests: WebSocket message format alignment, enemy ID round-trip, full mission flow
+
+### Coordination Rules
+- Backend and Godot implementors start simultaneously. Backend does not need to finish first — Godot uses mock/stub WebSocket responses until backend is ready.
+- When both reach Task 10+ (backend WebSocket server + Godot WebSocket client), the integration implementor kicks in.
+- All agents commit to the SAME feature branch. Use atomic commits with clear messages.
+- If an agent is blocked by another agent's work, it moves to the next non-blocked task.
+- At each playtest gate, ALL agents stop and review the game state together.
+
+### Decision Authority
+- Implementors can make tactical decisions (variable names, code structure, small scope adjustments) without approval.
+- Implementors must escalate: architecture changes, new dependencies, feature cuts, or anything that contradicts the approved plan.
+- If two implementors disagree on an approach, the one whose subsystem is affected decides.
+
 ## Design Docs
 
 - Spec: `docs/superpowers/specs/2026-03-30-agentic-robots-tower-defense-design.md`
