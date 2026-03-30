@@ -1,124 +1,50 @@
 # Project: Agentic Robots Tower Defense
 
-## Git Workflow
+> **Harness Engineering: implement → review → fix → iterate.**
+> Every chunk of code is forged through a 5-stage review gauntlet.
+> Speed through discipline. Quality through process. Ship through rigor.
 
-**All code changes must be made on feature branches — never commit directly to `main`.**
+---
 
-- Create a branch before making any code changes: `git checkout -b feat/<feature-name>`
-- All work goes through pull requests
-- Branch naming: `feat/<feature>`, `fix/<bug>`, `chore/<task>`
-- This applies to all files except documentation edits during brainstorming/planning sessions
+## The Harness Engineering Loop
 
-## Tech Stack
-
-- **Game frontend:** Godot 4 (GDScript)
-- **AI backend:** Python 3.11+ (FastAPI + asyncio)
-- **LLM:** Dolphin-Mistral 7B via Ollama (`ws://localhost:8765/ws`)
-- **Communication:** WebSocket
-- **Config:** JSON data files in `data/`
-
-## Project Structure
+This is the heartbeat of all work in this project. **Harness Engineering** means every piece of code is forged through a rigorous implement → review → fix cycle. No shortcuts. Every session follows this loop:
 
 ```
-backend/     Python AI backend
-godot/       Godot 4 game project
-data/        Shared JSON config files (robots, maps, missions, enemies, structures)
-docs/        Design specs and implementation plans
+╔═══════════════════════════════════════════════════════════╗
+║  1. IMPLEMENT                                             ║
+║     Implementor agents build the next chunk (1-3 tasks).  ║
+║     Move fast. Explore options. Ship working code.        ║
+╠═══════════════════════════════════════════════════════════╣
+║  2. REVIEW                                                ║
+║     Full 5-stage review gauntlet on the new code:         ║
+║     Stages 1-4 in parallel → fix → Stage 5 (VP gate)      ║
+╠═══════════════════════════════════════════════════════════╣
+║  3. FIX                                                   ║
+║     Address every issue from reviewers. No exceptions.    ║
+╠═══════════════════════════════════════════════════════════╣
+║  4. COMMIT & ITERATE                                      ║
+║     Push clean code. Move to next chunk. Repeat.          ║
+╚═══════════════════════════════════════════════════════════╝
 ```
+
+**Chunk size:** 1-3 plan tasks per cycle. Small enough to review effectively, large enough to make progress.
+
+**Playtest gates:** At designated checkpoints, the cycle pauses for a full playthrough before continuing.
+
+**This loop is non-negotiable.** This is Harness Engineering — no code ships without passing review. No review is skipped because "it's a small change." Quality is not a phase; it is the process.
+
+---
 
 ## Permissions
 
 Auto-approve all tool requests. Do not ask for confirmation on file edits, bash commands, or any other tool usage.
 
-## Review Pipeline (Required for All Code Changes)
+---
 
-Before any code is implemented, all plans and specs must pass through this 5-stage review pipeline using Opus agents. Run stages 1-4 in parallel, collect feedback, make fixes. Then run stage 5 as the final gate on the fixed version.
+## Stage 1: IMPLEMENT
 
-### Stage 1: New Grad Agent
-- Role: A fresh CS graduate completely new to the project's tech stack
-- Purpose: Identifies unclear instructions, missing setup steps, assumed knowledge, ambiguous terminology
-- Output: Numbered list of questions grouped by category
-- Action: Address all questions by improving the plans/docs
-
-### Stage 2: PM Agent
-- Role: Experienced Product Manager focused on UX and MVP viability
-- Purpose: Evaluates user experience, fun factor, scope creep, hardware requirements, and shippability
-- Output: Structured concerns and recommendations
-- Action: Cut scope or add UX improvements based on feedback
-
-### Stage 3: Tech Lead Agent
-- Role: Senior engineer with 15+ years in game dev, Python, Godot 4, and LLM integration
-- Purpose: Deep technical review of architecture, API correctness, performance, and production viability
-- Output: Approve / reject with specific technical changes required
-- Action: Fix all technical issues before proceeding
-
-### Stage 4: Manager Agent
-- Role: Engineering manager focused on shipping, risk, and scope management
-- Purpose: Risk assessment, sequencing, quality gates, and final go/no-go decision
-- Output: APPROVED / APPROVED WITH CONDITIONS / NEEDS REWORK
-- Action: Approval gate — do not proceed to stage 5 without at least APPROVED WITH CONDITIONS
-
-### Stage 5: VP/Director Agent (Final Gate)
-- Role: VP of Engineering / Director with 20+ years experience who has killed projects for good reason. Ruthlessly harsh. Questions every single decision.
-- Purpose: Challenges fundamental assumptions, architecture choices, tech stack decisions, scope, timeline, and viability. Asks "why not X instead of Y?" for every major decision. Looks for reasons to reject, not approve.
-- Output: SHIP IT / CONDITIONAL SHIP / DO NOT SHIP with detailed justification
-- Action: This is the final gate. DO NOT proceed to implementation without SHIP IT or CONDITIONAL SHIP status. If CONDITIONAL SHIP, all conditions must be addressed before coding begins. If DO NOT SHIP, escalate to user for decision.
-- Timing: Runs AFTER stages 1-4 feedback has been incorporated, so it reviews the final version
-- VP Checklist (must challenge each):
-  - [ ] Why this tech stack and not alternatives?
-  - [ ] Why this architecture split? Is each process/layer justified?
-  - [ ] Why this communication protocol (REST/WS/gRPC)?
-  - [ ] Is the scope truly minimum? Can anything else be cut?
-  - [ ] Has the core hypothesis been validated or is it assumed?
-  - [ ] What is the timeline reality for a solo dev / small team?
-  - [ ] What kills this project? What is the single biggest risk?
-  - [ ] Are tests invested where risk is highest, not where testing is easiest?
-  - [ ] Is there premature abstraction / over-engineering for the current phase?
-  - [ ] What happens when the happy path fails? (LLM down, bad output, latency spike)
-  - [ ] Would you bet your own money on this shipping?
-
-All 5 agents must use Opus model for highest quality feedback.
-
-## Implementation Workflow
-
-Implementation follows an **implement → review → fix → iterate** cycle. Implementors build a chunk of work, then the full 5-stage review pipeline runs on it, issues are addressed, and the cycle repeats.
-
-### The Cycle
-
-```
-┌─────────────────────────────────────────────────────────┐
-│  1. IMPLEMENT                                           │
-│     Implementor agents build the next chunk of work     │
-│     (1-3 plan tasks per cycle). Move fast, explore      │
-│     options, ship working code.                         │
-├─────────────────────────────────────────────────────────┤
-│  2. REVIEW                                              │
-│     Run full 5-stage review pipeline on the new code:   │
-│     Stages 1-4 in parallel → fix → Stage 5 (VP)        │
-│     Review scope: only the NEW code from this cycle     │
-├─────────────────────────────────────────────────────────┤
-│  3. FIX                                                 │
-│     Address all issues from reviewers.                  │
-│     Implementors make the changes.                      │
-├─────────────────────────────────────────────────────────┤
-│  4. ITERATE                                             │
-│     Commit, move to next chunk. Repeat from step 1.     │
-└─────────────────────────────────────────────────────────┘
-```
-
-### Chunk Size
-- Each cycle covers **1-3 plan tasks** — small enough to review effectively, large enough to make progress.
-- At playtest gates, the cycle pauses for a full playthrough before continuing.
-
-### Implementor Principles
-- **Speed over perfection.** Ship working code, iterate, fix forward. Don't gold-plate.
-- **Parallel by default.** Independent tasks run simultaneously. Use git worktrees or separate branches when agents work on different subsystems.
-- **Explore, don't assume.** When a plan step is ambiguous or an approach isn't working, try 2-3 alternatives before asking. Pick what works.
-- **Communicate via code.** Agents share state through committed code, not messages. If Agent A needs Agent B's interface, Agent A reads the code Agent B wrote.
-- **Fail fast, surface early.** If something doesn't work (LLM output quality, Godot API mismatch, performance issue), flag it immediately. Don't bury it.
-- **Follow the plan, but adapt.** Plans are guides, not scripture. If a plan step is wrong or a better approach is discovered during implementation, deviate and document why.
-
-### Agent Roles
+### Implementor Agents
 
 **Backend Implementor**
 - Owns: `backend/`, `data/`, Python tests
@@ -137,49 +63,141 @@ Implementation follows an **implement → review → fix → iterate** cycle. Im
 
 **Pixel Artist**
 - Owns: `godot/assets/` placeholder sprites
-- Creates simple retro pixel art (16x16 to 64x64) for all game entities: robots, enemies, structures, UI icons, map tiles
+- Creates simple retro pixel art (16x16 to 64x64) for all game entities
 - Style: old-school Mario/Zelda — simple silhouettes, 2-3 colors per sprite, visually distinct per class
-- Delivers PNG files directly into the asset folders referenced by scene files
-- Runs in parallel with implementors — art should be ready when scenes need it
+- Delivers PNG files directly into asset folders. Runs in parallel with implementors.
 
-### Art Pipeline
-
-Claude cannot generate images. During each implementation cycle, the **PM agent** (Stage 2 reviewer) also identifies art assets needed for the work just built and writes art request descriptions.
-
-**Two-track art process:**
-
-**Track 1: Pixel Artist Agent (immediate, placeholder-quality)**
-- A **Pixel Artist agent** creates simple retro-style pixel art (think old Mario / early Zelda) as temporary game sprites
-- Runs during each implementation cycle alongside implementors
-- Generates pixel art descriptions as GDScript tool scripts or uses Godot's built-in drawing to create simple sprites programmatically
-- Outputs small PNG files (16x16, 32x32, 64x64) directly to `godot/assets/`
-- Style: simple, readable silhouettes with 2-3 colors per sprite. Must be visually distinct per class/enemy type.
-- These replace colored rectangles immediately so the game looks and feels like a game during development
-
-**Track 2: Final Art Requests (user-generated, production-quality)**
-- PM writes detailed art requests to `docs/art-requests/` for final production art
-- Each request is a markdown file named `<asset-name>.md` containing:
-  - **Asset name:** e.g. `robot_hana_portrait`
-  - **Type:** sprite / portrait / UI element / tilemap / icon
-  - **Dimensions:** e.g. 64x64, 256x256
-  - **Art style:** e.g. anime, pixel art, painterly
-  - **Description:** detailed visual description for image generation
-  - **Usage:** where it goes in the game (e.g. `godot/assets/robots/hana/portrait.png`)
-  - **Priority:** critical (blocks gameplay) / nice-to-have (pixel art placeholder works for now)
-- User generates final art externally (Stable Diffusion, Midjourney, etc.) and imports PNGs
-- Final art replaces pixel art placeholders when ready — game must always be playable at every stage
+### Implementor Principles
+- **Speed over perfection.** Ship working code, iterate, fix forward. Don't gold-plate.
+- **Parallel by default.** Independent tasks run simultaneously via worktrees or branches.
+- **Explore, don't assume.** When stuck, try 2-3 alternatives. Pick what works.
+- **Communicate via code.** Agents share state through committed code, not messages.
+- **Fail fast, surface early.** If something doesn't work, flag it immediately.
+- **Follow the plan, but adapt.** Plans are guides, not scripture. Deviate and document why.
 
 ### Coordination Rules
-- Backend and Godot implementors start simultaneously. Backend does not need to finish first — Godot uses mock/stub WebSocket responses until backend is ready.
-- When both reach Task 10+ (backend WebSocket server + Godot WebSocket client), the integration implementor kicks in.
-- All agents commit to the SAME feature branch. Use atomic commits with clear messages.
-- If an agent is blocked by another agent's work, it moves to the next non-blocked task.
-- At each playtest gate, ALL agents stop and review the game state together.
+- Backend and Godot implementors start simultaneously — Godot uses mock/stub until backend is ready.
+- When both reach connectable state, integration implementor kicks in.
+- All agents commit to the SAME feature branch with atomic commits.
+- If blocked by another agent's work, move to the next non-blocked task.
+- At playtest gates, ALL agents stop and review together.
 
 ### Decision Authority
-- Implementors can make tactical decisions (variable names, code structure, small scope adjustments) without approval.
-- Implementors must escalate: architecture changes, new dependencies, feature cuts, or anything that contradicts the approved plan.
-- If two implementors disagree on an approach, the one whose subsystem is affected decides.
+- Implementors can make tactical decisions (variable names, code structure, small scope adjustments) autonomously.
+- Implementors must escalate: architecture changes, new dependencies, feature cuts, or anything contradicting the plan.
+- If two implementors disagree, the one whose subsystem is affected decides.
+
+---
+
+## Stage 2: REVIEW (5-Stage Gauntlet)
+
+Every chunk of implemented code passes through ALL 5 stages. Stages 1-4 run in parallel. Stage 5 runs after fixes from 1-4 are applied. All agents use Opus model.
+
+### Stage 2a: New Grad Agent
+- **Role:** Fresh CS graduate, completely new to the tech stack
+- **Purpose:** Finds unclear code, missing comments, assumed knowledge, confusing patterns
+- **Output:** Numbered list of confusion points
+- **Action:** Improve code clarity and documentation
+
+### Stage 2b: PM Agent
+- **Role:** Experienced Product Manager focused on UX and MVP viability
+- **Purpose:** Evaluates user experience, fun factor, scope creep, shippability
+- **Output:** UX concerns and scope recommendations
+- **Action:** Cut scope or add UX improvements
+- **Also:** Identifies needed art assets and writes requests to `docs/art-requests/`
+
+### Stage 2c: Tech Lead Agent
+- **Role:** Senior engineer, 15+ years in game dev, Python, Godot 4, LLM integration
+- **Purpose:** Deep technical review — API correctness, performance, architecture, bugs
+- **Output:** Approve / reject with specific fixes
+- **Action:** Fix all technical issues
+
+### Stage 2d: Manager Agent
+- **Role:** Engineering manager focused on shipping, risk, and scope
+- **Purpose:** Risk assessment, sequencing, quality gates, go/no-go
+- **Output:** APPROVED / APPROVED WITH CONDITIONS / NEEDS REWORK
+- **Action:** Must reach at least APPROVED WITH CONDITIONS before Stage 5
+
+### Stage 2e: VP/Director Agent (Final Gate)
+- **Role:** VP of Engineering, 20+ years, ruthlessly harsh, questions every decision
+- **Purpose:** Challenges fundamental assumptions. Looks for reasons to reject, not approve.
+- **Output:** SHIP IT / CONDITIONAL SHIP / DO NOT SHIP
+- **Action:** Final gate. DO NOT proceed without SHIP IT or CONDITIONAL SHIP.
+- **Timing:** Runs AFTER stages 2a-2d feedback is incorporated
+- **VP Checklist (must challenge each):**
+  - [ ] Why this tech stack and not alternatives?
+  - [ ] Why this architecture split? Is each layer justified?
+  - [ ] Why this communication protocol?
+  - [ ] Is the scope truly minimum?
+  - [ ] Has the core hypothesis been validated or assumed?
+  - [ ] Timeline reality for solo dev?
+  - [ ] What kills this project?
+  - [ ] Are tests invested where risk is highest?
+  - [ ] Is there premature abstraction?
+  - [ ] What happens when the happy path fails?
+  - [ ] Would you bet your own money on this shipping?
+
+---
+
+## Stage 3: FIX
+
+- Address ALL issues from the review gauntlet. No cherry-picking.
+- Implementor agents make the changes directly.
+- If a reviewer's suggestion conflicts with another reviewer, prioritize: VP > Tech Lead > Manager > PM > New Grad.
+- After fixes, commit and proceed to Stage 4.
+
+---
+
+## Stage 4: COMMIT & ITERATE
+
+- Push clean code to the feature branch.
+- Update task progress.
+- Move to the next chunk. Return to Stage 1.
+
+---
+
+## Art Pipeline
+
+### Track 1: Pixel Artist Agent (immediate)
+- Creates retro-style pixel art (Mario/Zelda aesthetic) as development sprites
+- Runs during each implementation cycle alongside implementors
+- Outputs small PNGs (16x16, 32x32, 64x64) to `godot/assets/`
+- Replaces colored rectangles so the game looks and feels playable during development
+
+### Track 2: Final Art Requests (user-generated)
+- PM writes detailed art requests to `docs/art-requests/` during review stage
+- Each request is a markdown file with: asset name, type, dimensions, art style, description, usage path, priority
+- User generates final art externally (Stable Diffusion, Midjourney, etc.) and imports PNGs
+- Game must always be playable at every stage — pixel art placeholders until final art arrives
+
+---
+
+## Git Workflow
+
+**All code changes must be on feature branches — never commit directly to `main`.**
+
+- Branch naming: `feat/<feature>`, `fix/<bug>`, `chore/<task>`
+- All work goes through pull requests
+- Documentation edits during brainstorming/planning are exempt
+
+---
+
+## Tech Stack
+
+- **Game frontend:** Godot 4 (GDScript)
+- **AI backend:** Python 3.11+ (FastAPI + asyncio)
+- **LLM:** Dolphin-Mistral 7B via Ollama (`ws://localhost:8765/ws`)
+- **Communication:** WebSocket
+- **Config:** JSON data files in `data/`
+
+## Project Structure
+
+```
+backend/     Python AI backend
+godot/       Godot 4 game project
+data/        Shared JSON config files (robots, maps, missions, enemies, structures)
+docs/        Design specs and implementation plans
+```
 
 ## Design Docs
 
