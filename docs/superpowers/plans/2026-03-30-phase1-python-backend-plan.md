@@ -10,6 +10,20 @@
 
 ---
 
+## Prerequisites
+
+1. **Python 3.11+** (recommend 3.12). Use a virtual environment:
+   ```bash
+   python -m venv .venv && source .venv/bin/activate
+   ```
+2. **Ollama**: Download from [ollama.com](https://ollama.com), install, then pull the model:
+   ```bash
+   ollama pull dolphin-mistral
+   ```
+3. The `backend/__init__.py` file is created in Task 1 to make `backend` a proper Python package.
+
+---
+
 ## Branch
 
 All work on this plan goes on branch: `feat/phase1-python-backend`
@@ -32,6 +46,7 @@ backend/
 ├── event_queue.py       # Per-robot async event queue + dispatcher
 ├── prompt_builder.py    # Build LLM prompts from state + context
 ├── ollama_client.py     # Async Ollama wrapper
+├── mock_llm.py          # Rule-based mock LLM for testing without Ollama
 ├── action_parser.py     # Parse LLM JSON response → RobotAction
 ├── requirements.txt
 └── tests/
@@ -41,7 +56,8 @@ backend/
     ├── test_robot_state.py
     ├── test_prompt_builder.py
     ├── test_action_parser.py
-    └── test_event_queue.py
+    ├── test_event_queue.py
+    └── test_mock_llm.py
 
 data/
 ├── robots/archetypes/
@@ -114,9 +130,10 @@ pytest_plugins = ['pytest_asyncio']
 
 - [ ] **Step 6: Verify pytest works**
 
+**Important:** All pytest commands must be run from the **repo root**, not from `backend/`. Imports use `from backend.models import ...` which requires the repo root on the Python path.
+
 ```bash
-cd backend
-pytest tests/ -v
+pytest backend/tests/ -v
 ```
 
 Expected: `no tests ran` (no test files yet, but no errors)
@@ -543,8 +560,7 @@ def test_ws_outgoing_valid():
 - [ ] **Step 2: Run tests to verify they fail**
 
 ```bash
-cd backend
-pytest tests/test_models.py -v
+pytest backend/tests/test_models.py -v
 ```
 
 Expected: `ImportError` — `backend.models` does not exist yet.
@@ -579,6 +595,7 @@ class LocalContext(BaseModel):
     structures: list[dict[str, Any]]
     recent_events: list[str]
     strategic_positions: list[dict[str, Any]]
+    merged_recent_events: list[str] = []  # Filled by event coalescing with older event types
 
 
 class RobotEvent(BaseModel):
@@ -673,7 +690,7 @@ class WsOutgoing(BaseModel):
 - [ ] **Step 4: Run tests to verify they pass**
 
 ```bash
-pytest tests/test_models.py -v
+pytest backend/tests/test_models.py -v
 ```
 
 Expected: All 13 tests `PASSED`.
@@ -749,7 +766,7 @@ def test_missing_robot_raises():
 - [ ] **Step 2: Run tests to verify they fail**
 
 ```bash
-pytest tests/test_config_loader.py -v
+pytest backend/tests/test_config_loader.py -v
 ```
 
 Expected: `ImportError` — `backend.config_loader` does not exist yet.
@@ -815,7 +832,7 @@ class ConfigLoader:
 - [ ] **Step 4: Run tests to verify they pass**
 
 ```bash
-pytest tests/test_config_loader.py -v
+pytest backend/tests/test_config_loader.py -v
 ```
 
 Expected: All 6 tests `PASSED`.
@@ -889,7 +906,7 @@ def test_get_missing_robot_raises():
 - [ ] **Step 2: Run tests to verify they fail**
 
 ```bash
-pytest tests/test_robot_state.py -v
+pytest backend/tests/test_robot_state.py -v
 ```
 
 Expected: `ImportError`.
@@ -950,7 +967,7 @@ class RobotStateStore:
 - [ ] **Step 4: Run tests to verify they pass**
 
 ```bash
-pytest tests/test_robot_state.py -v
+pytest backend/tests/test_robot_state.py -v
 ```
 
 Expected: All 6 tests `PASSED`.
@@ -1057,13 +1074,13 @@ def test_prompt_contains_commander_broadcast():
 def test_prompt_ends_with_json_instruction():
     builder = PromptBuilder()
     prompt = builder.build(ROBOT_CONFIG, ROBOT_RUNTIME_STATS, _make_event())
-    assert "Respond with a single JSON action" in prompt
+    assert "You MUST respond with ONLY a JSON object" in prompt
 ```
 
 - [ ] **Step 2: Run tests to verify they fail**
 
 ```bash
-pytest tests/test_prompt_builder.py -v
+pytest backend/tests/test_prompt_builder.py -v
 ```
 
 Expected: `ImportError`.
@@ -1127,17 +1144,18 @@ Strategic positions:
 {event.event_type.value}: {event.event_detail}
 
 [Instruction]
-Respond with a single JSON action. Valid actions: move, attack, snipe, build, deploy_turret, retreat, heal, idle.
+You MUST respond with ONLY a JSON object. No other text.
+Valid actions: move, attack, snipe, retreat, heal, idle.
 Enemy target_id values are small sequential integers (1, 2, 3...) as shown in the enemy list above.
-Example move: {{"action": "move", "destination": "north_chokepoint", "reason": "Blocking advance"}}
-Example attack: {{"action": "attack", "target_id": 1, "approach": "maintain_range", "reason": "Enemy in range"}}
+Example: {{"action": "move", "destination": "north_chokepoint", "reason": "Blocking advance"}}
+Example: {{"action": "attack", "target_id": 1, "approach": "maintain_range", "reason": "Enemy in range"}}
 """
 ```
 
 - [ ] **Step 4: Run tests to verify they pass**
 
 ```bash
-pytest tests/test_prompt_builder.py -v
+pytest backend/tests/test_prompt_builder.py -v
 ```
 
 Expected: All 6 tests `PASSED`.
@@ -1224,7 +1242,7 @@ def test_parse_retreat_action():
 - [ ] **Step 2: Run tests to verify they fail**
 
 ```bash
-pytest tests/test_action_parser.py -v
+pytest backend/tests/test_action_parser.py -v
 ```
 
 Expected: `ImportError`.
@@ -1256,7 +1274,7 @@ class ActionParser:
 - [ ] **Step 4: Run tests to verify they pass**
 
 ```bash
-pytest tests/test_action_parser.py -v
+pytest backend/tests/test_action_parser.py -v
 ```
 
 Expected: All 7 tests `PASSED`.
@@ -1306,10 +1324,13 @@ class OllamaClient:
         self._client = ollama.AsyncClient()
 
     async def think(self, prompt: str) -> str:
-        response = await self._client.chat(
-            model=self.MODEL,
-            messages=[{"role": "user", "content": prompt}],
-            options={"temperature": 0.3, "num_predict": 200}
+        response = await asyncio.wait_for(
+            self._client.chat(
+                model=self.MODEL,
+                messages=[{"role": "user", "content": prompt}],
+                options={"temperature": 0.3, "num_predict": 200}
+            ),
+            timeout=30,
         )
         return response.message.content
 ```
@@ -1344,7 +1365,252 @@ git commit -m "feat: add async ollama client wrapper"
 
 ---
 
-## Task 9: Event Queue
+## Task 9: Mock LLM
+
+**Files:**
+- Create: `backend/mock_llm.py`
+- Create: `backend/tests/test_mock_llm.py`
+
+This provides rule-based robot decisions without calling Ollama, useful for testing and offline development. It implements the same interface as `OllamaClient` (a `think()` method that returns a JSON action string).
+
+- [ ] **Step 1: Write failing tests**
+
+`backend/tests/test_mock_llm.py`:
+```python
+import pytest
+import json
+from backend.mock_llm import MockLLM
+
+
+def _make_prompt(robot_class: str, enemies=None, allies=None):
+    """Build a minimal prompt string that MockLLM can parse."""
+    enemies = enemies or []
+    allies = allies or []
+    enemies_text = json.dumps(enemies)
+    allies_text = json.dumps(allies)
+    return f"""[System]
+You are TestBot, a common {robot_class} robot. You are brave.
+Your stats: speed=5, damage=6, armor=8, health=200/200, ammo=60, building_skill=2
+
+[Player Instructions]
+Hold position.
+
+[Environment]
+Nearby enemies: {enemies_text}
+Nearby allies: {allies_text}
+Structures: []
+Recent events:
+None
+Strategic positions:
+- north_chokepoint: Narrow gap on north path
+- base_entrance: Last defensive line
+
+[Global]
+Commander broadcast: None
+
+[Event]
+ENEMY_SPOTTED: zombie at north
+
+[Instruction]
+You MUST respond with ONLY a JSON object. No other text.
+"""
+
+
+@pytest.mark.asyncio
+async def test_vanguard_attacks_nearest_enemy():
+    mock = MockLLM()
+    prompt = _make_prompt("vanguard", enemies=[{"id": 1, "type": "zombie", "position": [200, 150], "health": 50}])
+    result = json.loads(await mock.think(prompt))
+    assert result["action"] == "attack"
+    assert result["target_id"] == 1
+
+
+@pytest.mark.asyncio
+async def test_vanguard_moves_to_base_entrance_when_no_enemies():
+    mock = MockLLM()
+    prompt = _make_prompt("vanguard", enemies=[])
+    result = json.loads(await mock.think(prompt))
+    assert result["action"] == "move"
+    assert result["destination"] == "base_entrance"
+
+
+@pytest.mark.asyncio
+async def test_striker_attacks_nearest_enemy_in_range():
+    mock = MockLLM()
+    prompt = _make_prompt("striker", enemies=[{"id": 2, "type": "zombie", "position": [300, 200], "health": 50}])
+    result = json.loads(await mock.think(prompt))
+    assert result["action"] == "attack"
+    assert result["target_id"] == 2
+
+
+@pytest.mark.asyncio
+async def test_striker_holds_position_when_no_enemies():
+    mock = MockLLM()
+    prompt = _make_prompt("striker", enemies=[])
+    result = json.loads(await mock.think(prompt))
+    assert result["action"] == "idle"
+
+
+@pytest.mark.asyncio
+async def test_architect_moves_to_strategic_position():
+    mock = MockLLM()
+    prompt = _make_prompt("architect", enemies=[])
+    result = json.loads(await mock.think(prompt))
+    assert result["action"] == "move"
+
+
+@pytest.mark.asyncio
+async def test_medic_heals_lowest_health_ally():
+    mock = MockLLM()
+    allies = [
+        {"id": "rex", "health": 50, "position": [512, 420]},
+        {"id": "hana", "health": 100, "position": [512, 460]},
+    ]
+    prompt = _make_prompt("medic", allies=allies)
+    result = json.loads(await mock.think(prompt))
+    assert result["action"] == "heal"
+
+
+@pytest.mark.asyncio
+async def test_medic_idles_when_no_allies():
+    mock = MockLLM()
+    prompt = _make_prompt("medic", allies=[])
+    result = json.loads(await mock.think(prompt))
+    assert result["action"] == "idle"
+```
+
+- [ ] **Step 2: Run tests to verify they fail**
+
+```bash
+pytest backend/tests/test_mock_llm.py -v
+```
+
+Expected: `ImportError` — `backend.mock_llm` does not exist yet.
+
+- [ ] **Step 3: Create `backend/mock_llm.py`**
+
+```python
+from __future__ import annotations
+import json
+import re
+
+
+class MockLLM:
+    """Rule-based mock that implements the same interface as OllamaClient.
+
+    Parses the prompt to determine robot class and context, then returns
+    a deterministic JSON action string.
+    """
+
+    _CLASS_PATTERN = re.compile(r"a \w+ (\w+) robot")
+    _ENEMIES_PATTERN = re.compile(r"Nearby enemies: (\[.*?\])")
+    _ALLIES_PATTERN = re.compile(r"Nearby allies: (\[.*?\])")
+    _POSITIONS_PATTERN = re.compile(r"- (\w+): ")
+
+    async def think(self, prompt: str) -> str:
+        robot_class = self._extract_class(prompt)
+        enemies = self._extract_json_list(prompt, self._ENEMIES_PATTERN)
+        allies = self._extract_json_list(prompt, self._ALLIES_PATTERN)
+        positions = self._POSITIONS_PATTERN.findall(prompt)
+
+        if robot_class == "vanguard":
+            return self._vanguard(enemies)
+        elif robot_class == "striker":
+            return self._striker(enemies)
+        elif robot_class == "architect":
+            return self._architect(positions)
+        elif robot_class == "medic":
+            return self._medic(allies)
+        return json.dumps({"action": "idle", "reason": "Unknown class"})
+
+    def _extract_class(self, prompt: str) -> str:
+        match = self._CLASS_PATTERN.search(prompt)
+        return match.group(1).lower() if match else "unknown"
+
+    def _extract_json_list(self, prompt: str, pattern: re.Pattern) -> list:
+        match = pattern.search(prompt)
+        if match:
+            try:
+                return json.loads(match.group(1))
+            except json.JSONDecodeError:
+                pass
+        return []
+
+    def _vanguard(self, enemies: list) -> str:
+        if enemies:
+            nearest = enemies[0]
+            return json.dumps({"action": "attack", "target_id": nearest["id"],
+                               "approach": "close_in", "reason": "Engaging nearest enemy"})
+        return json.dumps({"action": "move", "destination": "base_entrance",
+                           "reason": "No enemies, moving to defend base"})
+
+    def _striker(self, enemies: list) -> str:
+        if enemies:
+            nearest = enemies[0]
+            return json.dumps({"action": "attack", "target_id": nearest["id"],
+                               "approach": "maintain_range", "reason": "Engaging nearest enemy in range"})
+        return json.dumps({"action": "idle", "reason": "No enemies in range, holding position"})
+
+    def _architect(self, positions: list) -> str:
+        dest = positions[0] if positions else "base_entrance"
+        return json.dumps({"action": "move", "destination": dest,
+                           "reason": "Moving to uncovered strategic position"})
+
+    def _medic(self, allies: list) -> str:
+        if allies:
+            lowest = min(allies, key=lambda a: a["health"])
+            return json.dumps({"action": "heal", "target_id": lowest.get("id"),
+                               "reason": f"Healing lowest-health ally"})
+        return json.dumps({"action": "idle", "reason": "No allies to heal"})
+```
+
+- [ ] **Step 4: Run tests to verify they pass**
+
+```bash
+pytest backend/tests/test_mock_llm.py -v
+```
+
+Expected: All 7 tests `PASSED`.
+
+- [ ] **Step 5: Add mock/real LLM flag in `main.py`**
+
+In `backend/main.py`, add the following near the top-level initialization to allow switching between real and mock LLM:
+
+Replace:
+```python
+from backend.ollama_client import OllamaClient
+```
+
+With:
+```python
+import os
+from backend.ollama_client import OllamaClient
+from backend.mock_llm import MockLLM
+```
+
+Replace:
+```python
+ollama_client = OllamaClient()
+```
+
+With:
+```python
+USE_MOCK_LLM = os.environ.get("USE_MOCK_LLM", "false").lower() == "true"
+ollama_client = MockLLM() if USE_MOCK_LLM else OllamaClient()
+```
+
+To use the mock, run: `USE_MOCK_LLM=true uvicorn backend.main:app --port 8765`
+
+- [ ] **Step 6: Commit**
+
+```bash
+git add backend/mock_llm.py backend/tests/test_mock_llm.py
+git commit -m "feat: add mock LLM with rule-based robot decisions"
+```
+
+---
+
+## Task 10: Event Queue
 
 **Files:**
 - Create: `backend/event_queue.py`
@@ -1401,14 +1667,15 @@ async def test_dequeue_empty_returns_none():
 
 @pytest.mark.asyncio
 async def test_coalescing_keeps_latest_event():
-    """Event coalescing: newer events discard older queued events for the same robot."""
+    """Event coalescing: newer events replace older queued events, but older event types are preserved in merged_recent_events."""
     queue = EventQueue()
     await queue.enqueue(_make_event("architect_common_hana", EventType.ENEMY_SPOTTED))
     await queue.enqueue(_make_event("architect_common_hana", EventType.TAKING_DAMAGE))
-    # Coalescing should discard the older ENEMY_SPOTTED, keeping only TAKING_DAMAGE
+    # Coalescing keeps only the latest event, but merges older event types
     assert queue.size("architect_common_hana") == 1
     event = await queue.dequeue("architect_common_hana")
     assert event.event_type == EventType.TAKING_DAMAGE
+    assert "ENEMY_SPOTTED" in event.local_context.merged_recent_events
 
 
 @pytest.mark.asyncio
@@ -1419,12 +1686,26 @@ async def test_coalescing_does_not_affect_other_robots():
     await queue.enqueue(_make_event("vanguard_common_rex", EventType.TAKING_DAMAGE))
     assert queue.size("architect_common_hana") == 1
     assert queue.size("vanguard_common_rex") == 1
+
+
+@pytest.mark.asyncio
+async def test_coalescing_merges_multiple_older_events():
+    """Multiple older events all get their types recorded in merged_recent_events."""
+    queue = EventQueue()
+    await queue.enqueue(_make_event("architect_common_hana", EventType.ENEMY_SPOTTED))
+    await queue.enqueue(_make_event("architect_common_hana", EventType.AMMO_LOW))
+    await queue.enqueue(_make_event("architect_common_hana", EventType.TAKING_DAMAGE))
+    assert queue.size("architect_common_hana") == 1
+    event = await queue.dequeue("architect_common_hana")
+    assert event.event_type == EventType.TAKING_DAMAGE
+    assert "ENEMY_SPOTTED" in event.local_context.merged_recent_events
+    assert "AMMO_LOW" in event.local_context.merged_recent_events
 ```
 
 - [ ] **Step 2: Run tests to verify they fail**
 
 ```bash
-pytest tests/test_event_queue.py -v
+pytest backend/tests/test_event_queue.py -v
 ```
 
 Expected: `ImportError`.
@@ -1441,9 +1722,10 @@ from backend.models import RobotEvent
 class EventQueue:
     """Per-robot async event queue with coalescing.
 
-    Event coalescing: when a new event arrives for a robot, any older queued
-    events for that robot are discarded. Only the latest event is kept. This
-    prevents stale context from backed-up events reaching the LLM.
+    Event coalescing: when a new event arrives for a robot, older queued
+    events are drained but their event types are preserved in the new
+    event's ``local_context.merged_recent_events`` list. This keeps the
+    latest context while still informing the LLM about recent history.
     """
 
     def __init__(self):
@@ -1456,12 +1738,16 @@ class EventQueue:
 
     async def enqueue(self, event: RobotEvent) -> None:
         q = self._get_queue(event.robot_id)
-        # Coalesce: drain any older events so only the latest remains
+        # Coalesce: drain older events but keep their types in merged_recent_events
+        merged: list[str] = []
         while not q.empty():
             try:
-                q.get_nowait()
+                old_event = q.get_nowait()
+                merged.append(old_event.event_type.value)
             except asyncio.QueueEmpty:
                 break
+        if merged:
+            event.local_context.merged_recent_events = merged
         await q.put(event)
 
     async def dequeue(self, robot_id: str) -> RobotEvent:
@@ -1480,10 +1766,10 @@ class EventQueue:
 - [ ] **Step 4: Run tests to verify they pass**
 
 ```bash
-pytest tests/test_event_queue.py -v
+pytest backend/tests/test_event_queue.py -v
 ```
 
-Expected: All 5 tests `PASSED`.
+Expected: All 6 tests `PASSED`.
 
 - [ ] **Step 5: Commit**
 
@@ -1494,7 +1780,7 @@ git commit -m "feat: add per-robot async event queue"
 
 ---
 
-## Task 10: WebSocket Server
+## Task 11: WebSocket Server
 
 **Files:**
 - Create: `backend/main.py`
@@ -1510,9 +1796,12 @@ from pathlib import Path
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from pydantic import ValidationError
 
+import os
+
 from backend.action_parser import ActionParser
 from backend.config_loader import ConfigLoader
 from backend.event_queue import EventQueue
+from backend.mock_llm import MockLLM
 from backend.models import SupportAction, WsIncoming, WsOutgoing
 from backend.ollama_client import OllamaClient
 from backend.prompt_builder import PromptBuilder
@@ -1527,7 +1816,9 @@ robot_state_store = RobotStateStore()
 event_queue = EventQueue()
 prompt_builder = PromptBuilder()
 action_parser = ActionParser()
-ollama_client = OllamaClient()
+USE_MOCK_LLM = os.environ.get("USE_MOCK_LLM", "false").lower() == "true"
+ollama_client = MockLLM() if USE_MOCK_LLM else OllamaClient()
+_ollama_semaphore = asyncio.Semaphore(1)
 
 
 async def process_robot_events(robot_id: str, websocket: WebSocket) -> None:
@@ -1545,7 +1836,8 @@ async def process_robot_events(robot_id: str, websocket: WebSocket) -> None:
         try:
             runtime_stats = {"health": state.health, "ammo": state.ammo}
             prompt = prompt_builder.build(robot_config, runtime_stats, event)
-            llm_response = await ollama_client.think(prompt)
+            async with _ollama_semaphore:
+                llm_response = await ollama_client.think(prompt)
             action = action_parser.parse(llm_response)
         except Exception as e:
             logger.error(f"LLM processing failed for {robot_id}: {e}")
@@ -1670,7 +1962,7 @@ Expected: JSON response containing `robot_id` and an `action` (e.g. `move`, `bui
 - [ ] **Step 4: Run all tests**
 
 ```bash
-pytest tests/ -v
+pytest backend/tests/ -v
 ```
 
 Expected: All tests `PASSED`.
@@ -1684,7 +1976,7 @@ git commit -m "feat: add fastapi websocket server tying all backend components t
 
 ---
 
-## Task 11: Push and Open PR
+## Task 12: Push and Open PR
 
 - [ ] **Step 1: Push branch**
 
@@ -1702,7 +1994,8 @@ gh pr create \
 - FastAPI WebSocket server receives robot events from Godot
 - Per-robot async event queue feeds prompt builder
 - Prompt builder merges robot config + runtime stats + player instructions + environment context
-- Ollama client queries Dolphin-Mistral 7B asynchronously
+- Ollama client queries Dolphin-Mistral 7B asynchronously (30s timeout, semaphore-serialized)
+- Mock LLM provides rule-based decisions for testing without Ollama (`USE_MOCK_LLM=true`)
 - Action parser extracts typed Pydantic actions from LLM response
 - Config loader reads all JSON data files from data/
 - 4 robot configs, 3 mission configs, 1 map config, zombie enemy config
@@ -1746,6 +2039,14 @@ tests/test_event_queue.py::test_queue_is_per_robot PASSED
 tests/test_event_queue.py::test_dequeue_empty_returns_none PASSED
 tests/test_event_queue.py::test_coalescing_keeps_latest_event PASSED
 tests/test_event_queue.py::test_coalescing_does_not_affect_other_robots PASSED
+tests/test_event_queue.py::test_coalescing_merges_multiple_older_events PASSED
+tests/test_mock_llm.py::test_vanguard_attacks_nearest_enemy PASSED
+tests/test_mock_llm.py::test_vanguard_moves_to_base_entrance_when_no_enemies PASSED
+tests/test_mock_llm.py::test_striker_attacks_nearest_enemy_in_range PASSED
+tests/test_mock_llm.py::test_striker_holds_position_when_no_enemies PASSED
+tests/test_mock_llm.py::test_architect_moves_to_strategic_position PASSED
+tests/test_mock_llm.py::test_medic_heals_lowest_health_ally PASSED
+tests/test_mock_llm.py::test_medic_idles_when_no_allies PASSED
 tests/test_models.py::test_robot_event_valid PASSED
 tests/test_models.py::test_move_action_valid PASSED
 tests/test_models.py::test_attack_action_valid PASSED
@@ -1771,5 +2072,5 @@ tests/test_robot_state.py::test_update_position PASSED
 tests/test_robot_state.py::test_set_current_action PASSED
 tests/test_robot_state.py::test_get_missing_robot_raises PASSED
 
-42 passed in X.XXs
+50 passed in X.XXs
 ```

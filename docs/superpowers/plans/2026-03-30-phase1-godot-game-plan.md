@@ -12,6 +12,16 @@
 
 ---
 
+## Prerequisites: Godot Setup
+
+1. **Download Godot 4.3+** from [godotengine.org](https://godotengine.org/download). It is a single portable executable — no installer needed. Extract it anywhere and run it directly.
+2. **Creating a scene:** In the Godot editor, click `Scene > New Scene`. Choose a root node type (e.g., `Node2D`, `Control`, `CharacterBody2D`). Add child nodes via the "+" button in the Scene panel. Save with `Ctrl+S`.
+3. **Adding nodes:** Right-click a node in the Scene panel > "Add Child Node". Search for the node type (e.g., `CollisionShape2D`, `Label`, `Timer`). Rename nodes by double-clicking their name in the Scene panel.
+4. **Setting properties in the Inspector:** Select any node in the Scene panel. The Inspector panel (right side) shows all properties. Click a property to edit it. For example: select a `CollisionShape2D`, then in Inspector set `Shape` to a new `CircleShape2D` and set its `Radius`.
+5. **Running scenes:** Press `F5` to run the main scene, or `F6` to run the currently open scene. The Output panel at the bottom shows print statements and errors.
+
+---
+
 ## Branch
 
 ```bash
@@ -424,6 +434,12 @@ git add godot/scripts/WebSocketClient.gd
 git commit -m "feat: add websocket client with auto-reconnect"
 ```
 
+<!-- PLAYTEST GATE: After Task 3, verify WebSocket round-trip.
+Start the Python backend (uvicorn backend.main:app --port 8765).
+Run the Godot project. Check the Output panel for "WS connected!" (from the temporary test).
+If connection fails, verify the backend URL and that no firewall blocks localhost:8765.
+Do NOT proceed until WebSocket connection is confirmed working. -->
+
 ---
 
 ## Task 4: Map Scene
@@ -556,8 +572,13 @@ Create new scene:
   - `Area2D` rename `PerceptionArea`
     - `CollisionShape2D` (circle, radius 200)
   - `Label` rename `SpeechLabel` (shows robot's `reason` text)
+  - `Label` rename `ThinkingLabel` (shows "..." while waiting for LLM response; initially hidden)
   - `Timer` rename `SpeechTimer` (hides speech after 3s)
   - `Timer` rename `AttackTimer` (wait_time=1.0, one_shot=false — fires repeated attacks while action is "attack"/"snipe")
+
+**Collision layer configuration** (select node in Scene panel, then Inspector > Collision > Layer/Mask):
+- `Robot` (the root CharacterBody2D): Layer = 1, Mask = 2 (robots are on layer 1, collide with enemies on layer 2)
+- `PerceptionArea` (the Area2D): Monitoring = true, Monitorable = false, Layer = (none), Mask = 2 (detect enemies only)
 
 Save as `res://scenes/robots/Robot.tscn`.
 
@@ -573,6 +594,7 @@ signal event_detected(robot_id: String, event_type: String, event_detail: String
 @onready var nav_agent: NavigationAgent2D = $NavAgent
 @onready var perception_area: Area2D = $PerceptionArea
 @onready var speech_label: Label = $SpeechLabel
+@onready var thinking_label: Label = $ThinkingLabel
 @onready var speech_timer: Timer = $SpeechTimer
 @onready var attack_timer: Timer = $AttackTimer
 
@@ -587,8 +609,11 @@ var _player_instructions: String = ""
 var _enemies_in_perception: Array[Node2D] = []
 var _recent_events: Array[String] = []
 var _map: Node = null  # set by GameManager
+var _ammo_low_fired: bool = false  # only fire AMMO_LOW event once per resupply cycle
+var _event_cooldowns: Dictionary = {}  # event_type -> last fire time (msec)
 
 const MAX_RECENT_EVENTS = 5
+const EVENT_COOLDOWN_MS = 2000  # minimum 2 seconds between same event type
 
 func setup(config: Dictionary, map: Node) -> void:
 	_config = config
@@ -608,14 +633,57 @@ func setup(config: Dictionary, map: Node) -> void:
 	attack_timer.wait_time = 1.0
 	attack_timer.one_shot = false
 	attack_timer.timeout.connect(_on_attack_timer)
+	thinking_label.text = "..."
+	thinking_label.visible = false
 	perception_area.body_entered.connect(_on_body_entered_perception)
 	perception_area.body_exited.connect(_on_body_exited_perception)
 	WebSocketClient.action_received.connect(_on_action_received)
 	WebSocketClient.register_robot(robot_id, _health, _ammo, global_position)
+	# Default spawn action based on class (before any LLM decisions arrive)
+	_execute_default_spawn_action()
 
 func set_player_instructions(text: String) -> void:
 	var max_chars = _config["base_stats"]["intelligence"] * 100
 	_player_instructions = text.left(max_chars)
+
+## Execute a default action on spawn based on robot class (before LLM responds)
+func _execute_default_spawn_action() -> void:
+	var robot_class = _config.get("class", "striker")
+	match robot_class:
+		"architect":
+			# Move to nearest strategic position
+			if _map:
+				var positions = _map.get_all_strategic_positions()
+				if not positions.is_empty():
+					var pos_id = positions[0].get("id", "base_entrance")
+					nav_agent.target_position = _map.get_strategic_position(pos_id)
+		"vanguard":
+			# Move to nearest strategic position
+			if _map:
+				var positions = _map.get_all_strategic_positions()
+				if not positions.is_empty():
+					var pos_id = positions[0].get("id", "north_chokepoint")
+					nav_agent.target_position = _map.get_strategic_position(pos_id)
+		"striker":
+			pass  # hold position (idle)
+		"medic":
+			# Move to rear support
+			if _map:
+				nav_agent.target_position = _map.get_strategic_position("rear_support")
+
+## Check if enough time has passed to fire this event type again (2s cooldown)
+func _can_fire_event(event_type: String) -> bool:
+	var now = Time.get_ticks_msec()
+	var last_fired = _event_cooldowns.get(event_type, 0)
+	if now - last_fired < EVENT_COOLDOWN_MS:
+		return false
+	_event_cooldowns[event_type] = now
+	return true
+
+## Called by GameManager between waves to reset ammo
+func resupply_ammo() -> void:
+	_ammo = _config["base_stats"]["ammo"]
+	_ammo_low_fired = false  # reset the AMMO_LOW guard
 
 func _physics_process(delta: float) -> void:
 	if not is_alive():
@@ -645,9 +713,15 @@ func _check_enemy_in_range() -> void:
 
 func execute_action(action: Dictionary) -> void:
 	_current_action = action
+	# Hide thinking indicator — we received an LLM response
+	thinking_label.visible = false
 	# Stop attack timer by default; only restart if action is attack/snipe
 	attack_timer.stop()
-	match action.get("action", "idle"):
+	var action_name = action.get("action", "idle")
+	# Phase 1: build/deploy_turret not supported — treat as idle
+	if action_name == "build" or action_name == "deploy_turret":
+		action_name = "idle"
+	match action_name:
 		"move", "retreat":
 			var destination_id = action.get("destination", "")
 			if destination_id and _map:
@@ -659,8 +733,6 @@ func execute_action(action: Dictionary) -> void:
 			if _target_enemy:
 				_perform_attack()         # fire immediately
 				attack_timer.start()      # then keep firing on timer
-		"build":
-			_start_build(action)
 		"heal":
 			_perform_heal(action)
 		"idle":
@@ -668,11 +740,15 @@ func execute_action(action: Dictionary) -> void:
 	var reason = action.get("reason", "")
 	if reason:
 		_show_speech(reason)
+		# Log action reason to HUD event log
+		var hud = get_tree().get_first_node_in_group("hud")
+		if hud and hud.has_method("add_log_entry"):
+			hud.add_log_entry(_config.get("name", robot_id) + ": " + reason)
 
 ## GD-6: Called repeatedly by AttackTimer while action is "attack"/"snipe"
 func _on_attack_timer() -> void:
 	var action_name = _current_action.get("action", "idle")
-	if action_name not in ["attack", "snipe"]:
+	if not ["attack", "snipe"].has(action_name):
 		attack_timer.stop()
 		return
 	# Re-acquire target if it died
@@ -680,6 +756,8 @@ func _on_attack_timer() -> void:
 		_target_enemy = _find_enemy_by_id(_current_action.get("target_id", -1))
 	if _target_enemy == null or not is_instance_valid(_target_enemy):
 		attack_timer.stop()
+		# Target is dead/invalid — fire ENEMY_ELIMINATED to get a new decision
+		_fire_event("ENEMY_ELIMINATED", "current target lost, requesting new orders")
 		return
 	_perform_attack()
 
@@ -691,12 +769,10 @@ func _perform_attack() -> void:
 		_target_enemy.take_damage(damage)
 	_ammo = max(0, _ammo - 1)
 	_push_recent_event("ENEMY_ATTACKED: " + str(_target_enemy.name))
-	if _ammo == 0 or (_ammo / float(_config["base_stats"]["ammo"])) < 0.2:
+	if not _ammo_low_fired and (_ammo == 0 or (_ammo / float(_config["base_stats"]["ammo"])) < 0.2):
+		_ammo_low_fired = true
 		_fire_event("AMMO_LOW", "ammo at " + str(_ammo))
 	WebSocketClient.send_state_update(robot_id, _health, _ammo, global_position)
-
-func _start_build(action: Dictionary) -> void:
-	_push_recent_event("BUILD_STARTED: " + action.get("structure", "unknown"))
 
 func _perform_heal(action: Dictionary) -> void:
 	_push_recent_event("HEALING: ally " + str(action.get("target_id", "unknown")))
@@ -716,10 +792,21 @@ func _die() -> void:
 	_push_recent_event("ROBOT_DIED")
 	set_physics_process(false)
 	hide()
+	# Phase 1: No permadeath. Robot is dead for THIS mission only.
+	# GameManager resets robots to full health on next mission start.
+
+## Called by GameManager to revive robot for next mission
+func revive() -> void:
+	_health = _max_health
+	_ammo = _config["base_stats"]["ammo"]
+	_ammo_low_fired = false
+	_event_cooldowns.clear()
+	set_physics_process(true)
+	show()
 
 func _on_body_entered_perception(body: Node2D) -> void:
 	if body.is_in_group("enemies"):
-		if body not in _enemies_in_perception:
+		if not _enemies_in_perception.has(body):
 			_enemies_in_perception.append(body)
 		_fire_event("ENEMY_SPOTTED", body.name + " at " + str(body.global_position))
 
@@ -731,19 +818,28 @@ func _on_action_received(received_robot_id: String, action: Dictionary) -> void:
 		execute_action(action)
 
 func _fire_event(event_type: String, event_detail: String) -> void:
+	if not _can_fire_event(event_type):
+		return  # cooldown not elapsed, skip
 	var local_context = _build_local_context()
-	var commander_broadcast = GameManager.get_commander_broadcast() if has_node("/root/GameManager") else null
+	var commander_broadcast = null
+	if has_node("/root/GameManager"):
+		commander_broadcast = GameManager.get_commander_broadcast()
 	WebSocketClient.send_event(robot_id, event_type, event_detail, local_context,
 			_player_instructions, commander_broadcast)
+	# Show thinking indicator while waiting for LLM response
+	thinking_label.visible = true
 
 func _build_local_context() -> Dictionary:
 	var enemies = []
 	for e in _enemies_in_perception:
 		if is_instance_valid(e):
 			# INT-1: Use sequential integer IDs instead of Godot instance IDs
+			var e_health: int = 50
+			if e.has_method("get_health"):
+				e_health = e.get_health()
 			enemies.append({"id": GameManager.get_enemy_id(e), "type": "zombie",
 				"position": [e.global_position.x, e.global_position.y],
-				"health": e.get_health() if e.has_method("get_health") else 50})
+				"health": e_health})
 	# GD-7: Populate nearby_allies from "robots" group
 	var allies = []
 	for r in get_tree().get_nodes_in_group("robots"):
@@ -753,7 +849,9 @@ func _build_local_context() -> Dictionary:
 				allies.append({"id": r.robot_id, "class": r._config.get("class", "unknown"),
 					"position": [r.global_position.x, r.global_position.y],
 					"health": r.get_health()})
-	var positions = _map.get_all_strategic_positions() if _map else []
+	var positions: Array = []
+	if _map:
+		positions = _map.get_all_strategic_positions()
 	return {
 		"nearby_enemies": enemies,
 		"nearby_allies": allies,
@@ -814,6 +912,9 @@ Create new scene:
   - `CollisionShape2D` (capsule, height 40, radius 16)
   - `NavigationAgent2D` rename `NavAgent`
   - `Timer` rename `AttackTimer` (wait_time=1.0, autostart=true)
+
+**Collision layer configuration** (select node in Scene panel, then Inspector > Collision > Layer/Mask):
+- `Zombie` (the root CharacterBody2D): Layer = 2, Mask = 1 (enemies are on layer 2, collide with robots on layer 1)
 
 Save as `res://scenes/enemies/Zombie.tscn`.
 
@@ -912,6 +1013,12 @@ Open `Zombie.tscn`. Run scene (F6). Verify no script errors.
 git add godot/scenes/enemies/
 git commit -m "feat: add zombie enemy scene with navigation to base"
 ```
+
+<!-- PLAYTEST GATE: After Task 6, verify pathfinding works.
+Open Map.tscn, instance a Robot and a Zombie manually, run the scene (F6).
+Verify: the robot's NavigationAgent2D finds a path, the zombie walks toward the base.
+If pathfinding fails, check that NavigationRegion2D has a baked NavigationPolygon covering the walkable area.
+Do NOT proceed until pathfinding is confirmed working. -->
 
 ---
 
@@ -1119,6 +1226,17 @@ func setup(mission_id: String) -> void:
 	_robot_configs = ConfigLoader.get_all_robots()
 	_build_robot_cards()
 	start_button.pressed.connect(_on_start_pressed)
+	# Show available strategic positions from the map config
+	var map_id = mission.get("map_id", "ch01_mission_01_map")
+	var map_config = ConfigLoader.get_map(map_id)
+	var positions = map_config.get("strategic_positions", [])
+	var pos_names: Array[String] = []
+	for pos in positions:
+		pos_names.append(pos.get("id", "unknown"))
+	var positions_label = Label.new()
+	positions_label.text = "Available positions: " + ", ".join(pos_names)
+	$VBoxContainer.add_child(positions_label)
+	$VBoxContainer.move_child(positions_label, 2)  # after MissionTitle
 
 func _build_robot_cards() -> void:
 	for child in robot_cards.get_children():
@@ -1143,10 +1261,23 @@ func _build_robot_cards() -> void:
 
 		var input = TextEdit.new()
 		input.custom_minimum_size = Vector2(200, 120)
-		input.placeholder_text = "Write " + config["name"] + "'s instructions..."
+		input.placeholder_text = _get_example_prompt(config.get("class", ""))
 		input.text_changed.connect(_on_text_changed.bind(config["id"], input, char_label, max_chars))
 		card.add_child(input)
 		_instruction_inputs[config["id"]] = input
+
+func _get_example_prompt(robot_class: String) -> String:
+	match robot_class:
+		"architect":
+			return "Position at the north chokepoint and hold. If enemies approach from the west, reposition to cover that flank."
+		"vanguard":
+			return "Hold the north chokepoint. Engage any enemy that gets close. Protect the base at all costs."
+		"striker":
+			return "Stay at west_flank for range advantage. Pick off enemies heading toward the base. Conserve ammo."
+		"medic":
+			return "Stay behind the front line at rear_support. Heal any ally below 50% health. Move toward injured allies."
+		_:
+			return "Write instructions..."
 
 func _on_text_changed(robot_id: String, input: TextEdit, char_label: Label, max_chars: int) -> void:
 	if _updating:
@@ -1204,6 +1335,9 @@ Create new scene:
       - `Button` name=`BtnFallBack` text="Fall Back!"
       - `Button` name=`BtnPrioritizeBase` text="Prioritize Base!"
       - `Button` name=`BtnFocusFire` text="Focus Fire!"
+  - `ItemList` name=`EventLog` anchored to right side (Anchor preset: Right Wide or custom right-side anchors). max_visible_items=10. Displays recent robot action log entries.
+
+Add the HUD node to group `hud` so robots can find it: select the root `HUD` node, Node panel > Groups > add `hud`.
 
 Save as `res://scenes/ui/HUD.tscn`.
 
@@ -1218,8 +1352,12 @@ extends CanvasLayer
 @onready var btn_fall_back: Button = $VBoxContainer2/HBoxContainer/BtnFallBack
 @onready var btn_prioritize_base: Button = $VBoxContainer2/HBoxContainer/BtnPrioritizeBase
 @onready var btn_focus_fire: Button = $VBoxContainer2/HBoxContainer/BtnFocusFire
+@onready var event_log: ItemList = $EventLog
+
+const MAX_LOG_ENTRIES = 10
 
 func _ready() -> void:
+	add_to_group("hud")  # so robots can find the HUD via get_first_node_in_group("hud")
 	btn_fall_back.pressed.connect(func(): _broadcast("Fall back to base immediately!"))
 	btn_prioritize_base.pressed.connect(func(): _broadcast("Prioritize defending the base above all else!"))
 	btn_focus_fire.pressed.connect(func(): _broadcast("Focus all fire on the nearest enemy to the base!"))
@@ -1232,6 +1370,13 @@ func update_base_health(current: int, maximum: int) -> void:
 
 func update_kill_count(count: int) -> void:
 	kill_label.text = "Kills: " + str(count)
+
+func add_log_entry(text: String) -> void:
+	event_log.add_item(text)
+	while event_log.item_count > MAX_LOG_ENTRIES:
+		event_log.remove_item(0)
+	# Auto-scroll to latest entry
+	event_log.ensure_current_is_visible()
 
 func _broadcast(text: String) -> void:
 	GameManager.set_commander_broadcast(text)
@@ -1279,7 +1424,7 @@ func add_currency(amount: int) -> void:
 	_save()
 
 func complete_mission(mission_id: String, currency_reward: int) -> void:
-	if mission_id not in _completed_missions:
+	if not _completed_missions.has(mission_id):
 		_completed_missions.append(mission_id)
 	add_currency(currency_reward)
 	_save()
@@ -1383,6 +1528,10 @@ func _on_base_destroyed() -> void:
 
 func _on_wave_completed(wave_number: int) -> void:
 	hud.update_base_health(map.get_base_health(), 500)
+	# Resupply ammo for all robots between waves
+	for robot in get_tree().get_nodes_in_group("robots"):
+		if is_instance_valid(robot) and robot.has_method("resupply_ammo"):
+			robot.resupply_ammo()
 	await get_tree().create_timer(3.0).timeout
 	GameManager.start_next_wave()
 
@@ -1430,6 +1579,13 @@ Save both as `res://scenes/Main.tscn`.
 git add godot/scenes/Game.tscn godot/scenes/Game.gd godot/scenes/Main.tscn godot/scenes/Main.gd
 git commit -m "feat: wire game scene and main scene for full mission flow"
 ```
+
+<!-- PLAYTEST GATE: After Task 11, verify the full game loop.
+Start the Python backend. Run Godot (F5). Go through the briefing, start a mission.
+Verify: robots spawn, zombies spawn, events fire to backend, LLM responses come back, robots act.
+Check for: missing node errors, null references, WebSocket disconnects.
+If robots never act, check the backend logs for LLM errors.
+Do NOT proceed to the integration test task until a basic loop is confirmed working. -->
 
 ---
 

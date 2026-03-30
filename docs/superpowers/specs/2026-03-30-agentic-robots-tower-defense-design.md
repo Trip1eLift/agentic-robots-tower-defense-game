@@ -79,6 +79,35 @@ The project is broken into 5 phases. Phase 1 is the MVP — a playable core loop
 
 **Important:** LLM decisions set the robot's **strategy** (who to attack, where to move, what approach). Robots **continuously execute** that strategy (auto-attack on a timer, keep moving to destination) until a new LLM decision arrives. This is critical because LLM response latency is 5-15 seconds — robots must not stand idle between decisions.
 
+### Default Spawn Actions (Before First LLM Response)
+Each robot class has a deterministic default action on spawn — no LLM call needed:
+```
+Architect:  move to nearest "architect" suitable strategic position
+Vanguard:   move to nearest "vanguard" suitable strategic position
+Striker:    hold position at spawn point, attack nearest enemy in range
+Medic:      move to rear_support position, monitor ally health
+```
+This ensures robots are immediately active while waiting for their first LLM decision.
+
+### Mock LLM Mode
+A rule-based fallback mode that runs without Ollama. Activated by flag or when Ollama is unreachable.
+```
+Mock rules per class:
+  Vanguard:  attack nearest enemy, move toward base_entrance if no enemies nearby
+  Striker:   attack nearest enemy in range, hold position
+  Architect: move to uncovered strategic position, idle
+  Medic:     heal lowest-health ally, move toward lowest-health ally
+```
+This enables development/testing without LLM latency and serves as the degraded-mode fallback.
+
+### Event Firing Rules
+```
+Cooldown:      2-second minimum between same event type per robot
+Batching:      if 5 enemies enter perception simultaneously, fire ONE event with all enemies listed
+Flood limit:   max 1 event per robot per second regardless of type
+```
+Without these limits, a wave of 16 zombies would generate 64+ events that overwhelm the LLM.
+
 ---
 
 ## Robot System
@@ -478,18 +507,27 @@ data/
 ## Phase Breakdown
 
 ### Phase 1 — MVP (Core Loop)
-- 1 map, 1 chapter, 3-5 missions
+- 1 map, 1 chapter, 3 missions (first milestone: 1 mission with 1 wave, then expand)
 - 4 fixed robots (one per class: Architect, Vanguard, Striker, Medic), no gacha
 - **Roster scaling target: up to 10 robots in later phases** — the async event queue architecture supports this without changes; only the mission robot slot limit needs adjusting
 - Default weapons per class, no weapon collection system
-- Build/deploy_turret actions exist in the schema but are no-ops in Phase 1 (LLM may attempt them; robots ignore and idle instead)
+- **Build/deploy_turret actions REMOVED from Phase 1 LLM prompt** — Pydantic models exist but LLM is not told about them. Architect fights with default weapon and positions strategically instead. Full building comes in Phase 3.
 - Ammo resupplied between waves; health NOT healed (Medic must heal between waves)
 - Zombies aggro on robots within melee range (not just base-only pathing)
-- **Pre-combat briefing**: player writes intelligence prompts per robot before each wave
+- **Pre-combat briefing**: player writes intelligence prompts per robot before each wave. UI shows strategic position names, class descriptions, and example prompts.
 - Core robot AI: WebSocket + Ollama + event-driven decisions + strategic positions (static only)
+- **Mock LLM mode**: rule-based fallback for development/testing and when Ollama is unreachable
+- **Default spawn actions**: robots act immediately on spawn before first LLM decision
+- **Event cooldown**: 2-second minimum per event type per robot to prevent LLM flooding
+- **Ollama timeout**: 30-second timeout per LLM call with idle fallback
+- **Ollama semaphore**: serialize LLM calls to 1 at a time for predictable queuing
 - Preset commander broadcast only (no free text)
-- Win/lose condition, basic mission rewards (currency only)
+- Win/lose condition, no currency/save system (deferred to Phase 2)
+- **Permadeath DISABLED in Phase 1** — robots respawn next mission. Only 4 fixed robots exist with no gacha to replace them. Permadeath activates in Phase 2 when gacha provides replacements.
 - Data-driven config foundation (robots, maps, enemies, structures)
+- **Collision layer setup**: robots layer 1, enemies layer 2, perception areas monitor layer 2
+- **HUD event log**: scrolling log of robot decisions so player can understand AI behavior
+- **Playtest gates**: (1) after pathfinding works, (2) after first WebSocket round-trip, (3) after full wave loop
 
 ### Phase 2 — Robot Progression
 - Gacha system (4 class pools, pity, shared currency)
