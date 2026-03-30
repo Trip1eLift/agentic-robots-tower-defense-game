@@ -8,7 +8,7 @@
 
 A 2D tower defense game where players collect agentic robot girls via a gacha system and defend a base against zombie waves. Players cannot control individual robots during combat — instead they craft intelligence prompts per robot and issue global commander broadcasts. Each robot is driven by a local LLM agent that makes autonomous decisions based on state change events.
 
-Phase 1 covers the core tower defense game. Phase 2 adds a companion chat system with relationship progression and age-gated content.
+The project is broken into 5 phases. Phase 1 is the MVP — a playable core loop with 4 robots and 1 campaign. Each subsequent phase layers in additional systems.
 
 ---
 
@@ -30,11 +30,11 @@ Phase 1 covers the core tower defense game. Phase 2 adds a companion chat system
 ┌─────────────────────────────────────────────────────┐
 │                   GODOT (GDScript)                  │
 │                                                     │
-│  ┌──────────┐  ┌──────────┐  ┌───────────────────┐ │
-│  │ Game Loop│  │  Robots  │  │  UI / Gacha / HUD │ │
-│  │ Waves    │  │ Movement │  │  Commander Panel  │ │
-│  │ Physics  │  │ Combat   │  │  Campaign Map     │ │
-│  └────┬─────┘  └────┬─────┘  └───────────────────┘ │
+│  ┌──────────┐   ┌──────────┐  ┌───────────────────┐ │
+│  │ Game Loop│   │  Robots  │  │  UI / Gacha / HUD │ │
+│  │ Waves    │   │ Movement │  │  Commander Panel  │ │
+│  │ Physics  │   │ Combat   │  │  Campaign Map     │ │
+│  └────┬─────┘   └────┬─────┘  └───────────────────┘ │
 │       └──────┬───────┘                              │
 │          WebSocket Client                           │
 └──────────────┼──────────────────────────────────────┘
@@ -42,10 +42,10 @@ Phase 1 covers the core tower defense game. Phase 2 adds a companion chat system
 ┌──────────────┼──────────────────────────────────────┐
 │          WebSocket Server                           │
 │                                                     │
-│  ┌────────────────────┐   ┌────────────────────┐   │
-│  │  Event Queue       │   │  Robot State Store │   │
-│  │  (per robot)       │   │  (memory, stats)   │   │
-│  └────────┬───────────┘   └────────────────────┘   │
+│  ┌────────────────────┐   ┌────────────────────┐    │
+│  │  Event Queue       │   │  Robot State Store │    │
+│  │  (per robot)       │   │  (memory, stats)   │    │
+│  └────────┬───────────┘   └────────────────────┘    │
 │           │                                         │
 │  ┌────────▼───────────┐                             │
 │  │  Prompt Builder    │                             │
@@ -102,7 +102,7 @@ Architect is the most expensive and most strategically impactful class — the q
 | health | Max hit points |
 | ammo | Ammo capacity |
 | building_skill | Build speed and structure tier access |
-| intelligence | Context window size for LLM prompt: level 1 = last 3 events, level 5 = last 10 events + full ally list, level 10 = full battlefield state |
+| intelligence | Max character length of the player's pre-wave instruction prompt assigned to this robot. Higher intelligence = player can write more detailed strategic instructions. Environmental context (enemies, allies, structures, events) is always included in full regardless of intelligence level. |
 
 ### Rarity
 `Common → Rare → Epic → Legendary`
@@ -201,11 +201,15 @@ COMMANDER_BROADCAST - player sends global command
 You are {name}, a {rarity} {class} robot. {personality_prompt}
 Your stats: speed={n}, damage={n}, armor={n}, health={n}/{max}, ammo={n}, building_skill={n}
 
-[Context - bounded by intelligence stat]
+[Player Instructions - truncated to intelligence stat character limit]
+{player_pre_wave_prompt}
+
+[Environment - always included in full]
 Nearby enemies: {list}
 Nearby allies:  {list}
 Structures:     {list}
-Recent events:  {last N events}
+Recent events:  {list}
+Strategic positions: {list of id + description}
 
 [Global]
 Commander broadcast: "{player_text}"
@@ -217,15 +221,78 @@ Commander broadcast: "{player_text}"
 Respond with a single JSON action.
 ```
 
+### Strategic Positions
+
+Positions that robots can move to and reason about by name. Two sources:
+
+**Map config (static)** — defined by level designer in map JSON:
+```json
+"strategic_positions": [
+  {
+    "id": "north_chokepoint",
+    "description": "Narrow passage between two walls, ideal for Vanguard to block enemy advance",
+    "position": [210, 150],
+    "suitable_for": ["vanguard", "architect"]
+  },
+  {
+    "id": "east_watchtower",
+    "description": "Elevated platform with clear sightline to east spawn, ideal for Strikers",
+    "position": [680, 200],
+    "suitable_for": ["striker"]
+  }
+]
+```
+
+**Architect-built (dynamic)** — registered automatically when a structure is completed:
+```json
+{
+  "id": "wall_north_01",
+  "description": "Newly built wall on north flank, provides cover from north spawn enemies",
+  "position": [210, 150],
+  "suitable_for": ["vanguard", "striker"],
+  "built_by": "architect_epic_hana",
+  "structure_id": "wall"
+}
+```
+
+On `BUILD_COMPLETE`, the new position is broadcast to all robots — any robot can immediately decide to reposition to exploit the new structure without player input.
+
+Godot handles actual pathfinding to position coordinates. The LLM reasons about strategy by name, never raw coordinates.
+
 ### Action Schema (Pydantic)
 ```python
-class RobotAction(BaseModel):
-    action: Literal["attack", "move", "build", "heal", "retreat", "idle", "snipe", "deploy_turret"]
-    target_id: Optional[int]
-    position: Optional[tuple[float, float]]
-    structure: Optional[Literal["wall", "barricade", "watchtower", "ammo_depot", "medic_station"]]
-    message: Optional[str]  # robot "says" this, shown in UI
+class MoveAction(BaseModel):
+    action: Literal["move"]
+    destination: str              # strategic position id, e.g. "north_chokepoint"
+    reason: Optional[str]         # shown in UI
+
+class AttackAction(BaseModel):
+    action: Literal["attack", "snipe"]
+    target_id: int
+    approach: Literal["close_in", "maintain_range", "stay_back"]
+    reason: Optional[str]
+
+class BuildAction(BaseModel):
+    action: Literal["build", "deploy_turret"]
+    structure: Literal["wall", "barricade", "watchtower", "ammo_depot", "medic_station"]
+    destination: str              # strategic position id where structure will be placed
+    reason: Optional[str]
+
+class RetreatAction(BaseModel):
+    action: Literal["retreat"]
+    destination: str              # strategic position id to fall back to
+    reason: Optional[str]
+
+class SupportAction(BaseModel):
+    action: Literal["heal", "idle"]
+    target_id: Optional[int]      # heal: ally to heal
+    reason: Optional[str]
+
+# Union type sent over WebSocket
+RobotAction = Union[MoveAction, AttackAction, BuildAction, RetreatAction, SupportAction]
 ```
+
+The `reason` field on every action is shown in the UI as the robot's speech — players can see why a robot made a decision.
 
 ### Commander Broadcast
 - Preset quick commands: "Fall back!", "Prioritize base!", "Focus fire!", etc.
@@ -249,9 +316,10 @@ World Map
 
 ### Mission Flow
 ```
-Pre-mission:   assign robots (max 6), equip weapons, set intelligence prompts
-Wave phase:    prompts locked; commander broadcast available; short prep between waves
-Post-mission:  rewards distributed, losses recorded, XP applied
+Pre-combat briefing:  assign robots (max 6), equip weapons, write intelligence prompts per robot
+                      prompts are locked once the first wave starts
+Wave phase:           robots act autonomously; commander broadcast available between waves
+Post-mission:         rewards distributed, losses recorded, XP applied
 ```
 
 ### Objectives
@@ -387,7 +455,48 @@ data/
 
 ---
 
-## Phase 2 — Companion System
+## Phase Breakdown
+
+### Phase 1 — MVP (Core Loop)
+- 1 map, 1 chapter, 3-5 missions
+- 4 fixed robots (one per class: Architect, Vanguard, Striker, Medic), no gacha
+- **Roster scaling target: up to 10 robots in later phases** — the async event queue architecture supports this without changes; only the mission robot slot limit needs adjusting
+- Default weapons per class, no weapon collection system
+- **Pre-combat briefing**: player writes intelligence prompts per robot before each wave
+- Core robot AI: WebSocket + Ollama + event-driven decisions + strategic positions (static only)
+- Preset commander broadcast only (no free text)
+- Win/lose condition, basic mission rewards (currency only)
+- Data-driven config foundation (robots, maps, enemies, structures)
+
+### Phase 2 — Robot Progression
+- Gacha system (4 class pools, pity, shared currency)
+- Robot leveling + stat upgrades (XP → level → stat slot choice)
+- Permadeath + resurrection item
+- Full robot roster management
+
+### Phase 3 — Weapons & Building
+- Weapon collection (campaign drops + paid shop)
+- Class-restricted weapons, unique weapons
+- Accuracy system (base, damage stat modifier, situational, range-based)
+- Architect dynamic structure building + dynamic strategic positions registered on `BUILD_COMPLETE`
+
+### Phase 4 — Campaign Expansion
+- Full campaign (multiple chapters, boss missions, supply missions)
+- All enemy types (Runner, Brute, Spitter, Horde, Boss)
+- Free text commander broadcast with cooldown
+- Materials resource system
+- **LLM priority queue**: with up to 10 robots, implement priority ordering for think requests — robots taking damage or with base under attack are processed before idle/building robots; prevents critical decisions being bottlenecked behind low-urgency ones on the RTX 4060
+
+### Phase 5 — Companion System
+- 1-on-1 companion chat outside of combat
+- Relationship system (level 0–10, combat loyalty effects, lore unlocks)
+- Age gate (DOB entry, silent 18+ enable for adults)
+- 18+ content toggle in settings
+- Death memorials (memory echo chat for dead robots)
+
+---
+
+## Phase 5 — Companion System (Detail)
 
 ### Overview
 Outside of combat, players can chat 1-on-1 with owned robots. Relationship level affects in-combat behavior and unlocks lore. Dead robots remain accessible as memory echoes.
@@ -435,10 +544,8 @@ Same WebSocket backend as Phase 1. New message type:
 
 ---
 
-## Out of Scope (Phase 1)
+## Out of Scope (All Phases)
 
 - Multiplayer
 - Cloud save / sync
-- Companion chat
-- 18+ content
 - Modding tools
