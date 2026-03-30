@@ -24,6 +24,7 @@ git checkout -b feat/phase1-python-backend
 
 ```
 backend/
+├── __init__.py          # Package marker (empty file)
 ├── main.py              # FastAPI app + WebSocket endpoint
 ├── models.py            # Pydantic models: events, actions, WS messages
 ├── config_loader.py     # Load + validate JSON data files from data/
@@ -65,6 +66,7 @@ data/
 ## Task 1: Project Setup
 
 **Files:**
+- Create: `backend/__init__.py`
 - Create: `backend/requirements.txt`
 - Create: `backend/tests/conftest.py`
 
@@ -76,7 +78,11 @@ git checkout -b feat/phase1-python-backend
 
 Expected: `Switched to a new branch 'feat/phase1-python-backend'`
 
-- [ ] **Step 2: Create `backend/requirements.txt`**
+- [ ] **Step 2: Create `backend/__init__.py`**
+
+Create an empty file at `backend/__init__.py` so that `backend` is a proper Python package.
+
+- [ ] **Step 3: Create `backend/requirements.txt`**
 
 ```
 fastapi==0.115.0
@@ -89,7 +95,7 @@ httpx==0.27.2
 websockets==13.1
 ```
 
-- [ ] **Step 3: Install dependencies**
+- [ ] **Step 4: Install dependencies**
 
 ```bash
 cd backend
@@ -98,7 +104,7 @@ pip install -r requirements.txt
 
 Expected: All packages install without errors.
 
-- [ ] **Step 4: Create `backend/tests/conftest.py`**
+- [ ] **Step 5: Create `backend/tests/conftest.py`**
 
 ```python
 import pytest
@@ -106,7 +112,7 @@ import pytest
 pytest_plugins = ['pytest_asyncio']
 ```
 
-- [ ] **Step 5: Verify pytest works**
+- [ ] **Step 6: Verify pytest works**
 
 ```bash
 cd backend
@@ -115,10 +121,10 @@ pytest tests/ -v
 
 Expected: `no tests ran` (no test files yet, but no errors)
 
-- [ ] **Step 6: Commit**
+- [ ] **Step 7: Commit**
 
 ```bash
-git add backend/requirements.txt backend/tests/conftest.py
+git add backend/__init__.py backend/requirements.txt backend/tests/conftest.py
 git commit -m "feat: bootstrap python backend project"
 ```
 
@@ -421,7 +427,7 @@ from pydantic import ValidationError
 from backend.models import (
     EventType, RobotEvent, MoveAction, AttackAction,
     BuildAction, RetreatAction, SupportAction, parse_robot_action,
-    WsIncoming, WsOutgoing
+    WsIncoming, WsOutgoing,
 )
 
 
@@ -505,6 +511,29 @@ def test_ws_incoming_valid():
     assert msg.robot_id == "vanguard_common_rex"
 
 
+def test_ws_incoming_to_robot_event():
+    msg = WsIncoming(
+        type="robot_event",
+        robot_id="vanguard_common_rex",
+        event_type=EventType.TAKING_DAMAGE,
+        event_detail="hit for 8 damage",
+        local_context={
+            "nearby_enemies": [{"id": 1, "type": "zombie", "position": [200, 150], "health": 50}],
+            "nearby_allies": [],
+            "structures": [], "recent_events": [], "strategic_positions": []
+        },
+        player_instructions="Hold the north chokepoint.",
+        commander_broadcast="Fall back!"
+    )
+    event = msg.to_robot_event()
+    assert isinstance(event, RobotEvent)
+    assert event.robot_id == "vanguard_common_rex"
+    assert event.event_type == EventType.TAKING_DAMAGE
+    assert event.event_detail == "hit for 8 damage"
+    assert event.player_instructions == "Hold the north chokepoint."
+    assert event.commander_broadcast == "Fall back!"
+
+
 def test_ws_outgoing_valid():
     action = MoveAction(action="move", destination="north_chokepoint", reason="Moving to hold")
     msg = WsOutgoing(robot_id="vanguard_common_rex", action=action)
@@ -545,7 +574,7 @@ class EventType(str, Enum):
 
 
 class LocalContext(BaseModel):
-    nearby_enemies: list[dict[str, Any]]
+    nearby_enemies: list[dict[str, Any]]  # Each enemy has "id" (small sequential int, e.g. 1, 2, 3)
     nearby_allies: list[dict[str, Any]]
     structures: list[dict[str, Any]]
     recent_events: list[str]
@@ -569,7 +598,7 @@ class MoveAction(BaseModel):
 
 class AttackAction(BaseModel):
     action: Literal["attack", "snipe"]
-    target_id: int
+    target_id: int  # Small sequential ID (1, 2, 3...) assigned by game manager, NOT Godot instance IDs
     approach: Literal["close_in", "maintain_range", "stay_back"]
     reason: Optional[str] = None
 
@@ -589,7 +618,7 @@ class RetreatAction(BaseModel):
 
 class SupportAction(BaseModel):
     action: Literal["heal", "idle"]
-    target_id: Optional[int] = None
+    target_id: Optional[int] = None  # Small sequential ID (1, 2, 3...) or None for idle
     reason: Optional[str] = None
 
 
@@ -624,6 +653,17 @@ class WsIncoming(BaseModel):
     player_instructions: str
     commander_broadcast: Optional[str]
 
+    def to_robot_event(self) -> RobotEvent:
+        """Convert WsIncoming to RobotEvent for the event queue."""
+        return RobotEvent(
+            robot_id=self.robot_id,
+            event_type=self.event_type,
+            event_detail=self.event_detail,
+            local_context=self.local_context,
+            player_instructions=self.player_instructions,
+            commander_broadcast=self.commander_broadcast,
+        )
+
 
 class WsOutgoing(BaseModel):
     robot_id: str
@@ -636,7 +676,7 @@ class WsOutgoing(BaseModel):
 pytest tests/test_models.py -v
 ```
 
-Expected: All 12 tests `PASSED`.
+Expected: All 13 tests `PASSED`.
 
 - [ ] **Step 5: Commit**
 
@@ -991,13 +1031,19 @@ def test_prompt_contains_strategic_positions():
 
 
 def test_intelligence_truncates_player_instructions():
-    long_instructions = "A" * 1000
+    long_instructions = "x" * 1000
     builder = PromptBuilder()
-    # intelligence=5 → max 500 chars
+    # intelligence=5 → max 500 chars (intelligence * 100)
     prompt = builder.build(ROBOT_CONFIG, ROBOT_RUNTIME_STATS, _make_event(player_instructions=long_instructions))
-    # The instructions section should not contain more than 500 chars of 'A'
-    a_count = prompt.count("A")
-    assert a_count <= 500
+    # Extract the Player Instructions section from the prompt
+    import re
+    match = re.search(r"\[Player Instructions\]\n(.*?)(\n\n|\n\[)", prompt, re.DOTALL)
+    assert match is not None, "Player Instructions section not found in prompt"
+    instructions_section = match.group(1).strip()
+    assert len(instructions_section) == 500, (
+        f"Expected 500 chars but got {len(instructions_section)}"
+    )
+    assert instructions_section == "x" * 500
 
 
 def test_prompt_contains_commander_broadcast():
@@ -1034,6 +1080,8 @@ class PromptBuilder:
     def build(self, robot_config: dict, runtime_stats: dict, event: RobotEvent) -> str:
         stats = robot_config["base_stats"]
         intelligence = stats["intelligence"]
+        # Character limit formula: intelligence * 100 (e.g. intelligence=5 → 500 chars max)
+        # Higher-intelligence robots can process longer player instructions
         max_instruction_chars = intelligence * 100
 
         instructions = event.player_instructions[:max_instruction_chars]
@@ -1080,6 +1128,7 @@ Strategic positions:
 
 [Instruction]
 Respond with a single JSON action. Valid actions: move, attack, snipe, build, deploy_turret, retreat, heal, idle.
+Enemy target_id values are small sequential integers (1, 2, 3...) as shown in the enemy list above.
 Example move: {{"action": "move", "destination": "north_chokepoint", "reason": "Blocking advance"}}
 Example attack: {{"action": "attack", "target_id": 1, "approach": "maintain_range", "reason": "Enemy in range"}}
 """
@@ -1262,7 +1311,7 @@ class OllamaClient:
             messages=[{"role": "user", "content": prompt}],
             options={"temperature": 0.3, "num_predict": 200}
         )
-        return response["message"]["content"]
+        return response.message.content
 ```
 
 `temperature=0.3` keeps responses consistent and JSON-parseable. `num_predict=200` caps token output — actions don't need to be long.
@@ -1351,11 +1400,25 @@ async def test_dequeue_empty_returns_none():
 
 
 @pytest.mark.asyncio
-async def test_queue_size():
+async def test_coalescing_keeps_latest_event():
+    """Event coalescing: newer events discard older queued events for the same robot."""
     queue = EventQueue()
     await queue.enqueue(_make_event("architect_common_hana", EventType.ENEMY_SPOTTED))
     await queue.enqueue(_make_event("architect_common_hana", EventType.TAKING_DAMAGE))
-    assert queue.size("architect_common_hana") == 2
+    # Coalescing should discard the older ENEMY_SPOTTED, keeping only TAKING_DAMAGE
+    assert queue.size("architect_common_hana") == 1
+    event = await queue.dequeue("architect_common_hana")
+    assert event.event_type == EventType.TAKING_DAMAGE
+
+
+@pytest.mark.asyncio
+async def test_coalescing_does_not_affect_other_robots():
+    """Events for different robots are independent - coalescing is per-robot."""
+    queue = EventQueue()
+    await queue.enqueue(_make_event("architect_common_hana", EventType.ENEMY_SPOTTED))
+    await queue.enqueue(_make_event("vanguard_common_rex", EventType.TAKING_DAMAGE))
+    assert queue.size("architect_common_hana") == 1
+    assert queue.size("vanguard_common_rex") == 1
 ```
 
 - [ ] **Step 2: Run tests to verify they fail**
@@ -1376,6 +1439,13 @@ from backend.models import RobotEvent
 
 
 class EventQueue:
+    """Per-robot async event queue with coalescing.
+
+    Event coalescing: when a new event arrives for a robot, any older queued
+    events for that robot are discarded. Only the latest event is kept. This
+    prevents stale context from backed-up events reaching the LLM.
+    """
+
     def __init__(self):
         self._queues: dict[str, asyncio.Queue[RobotEvent]] = {}
 
@@ -1385,7 +1455,14 @@ class EventQueue:
         return self._queues[robot_id]
 
     async def enqueue(self, event: RobotEvent) -> None:
-        await self._get_queue(event.robot_id).put(event)
+        q = self._get_queue(event.robot_id)
+        # Coalesce: drain any older events so only the latest remains
+        while not q.empty():
+            try:
+                q.get_nowait()
+            except asyncio.QueueEmpty:
+                break
+        await q.put(event)
 
     async def dequeue(self, robot_id: str) -> RobotEvent:
         return await self._get_queue(robot_id).get()
@@ -1406,7 +1483,7 @@ class EventQueue:
 pytest tests/test_event_queue.py -v
 ```
 
-Expected: All 4 tests `PASSED`.
+Expected: All 5 tests `PASSED`.
 
 - [ ] **Step 5: Commit**
 
@@ -1436,7 +1513,7 @@ from pydantic import ValidationError
 from backend.action_parser import ActionParser
 from backend.config_loader import ConfigLoader
 from backend.event_queue import EventQueue
-from backend.models import WsIncoming, WsOutgoing
+from backend.models import SupportAction, WsIncoming, WsOutgoing
 from backend.ollama_client import OllamaClient
 from backend.prompt_builder import PromptBuilder
 from backend.robot_state import RobotStateStore
@@ -1454,6 +1531,9 @@ ollama_client = OllamaClient()
 
 
 async def process_robot_events(robot_id: str, websocket: WebSocket) -> None:
+    import logging
+    logger = logging.getLogger(__name__)
+
     robot_config = config_loader.get_robot(robot_id)
     while True:
         event = await event_queue.dequeue(robot_id)
@@ -1462,10 +1542,14 @@ async def process_robot_events(robot_id: str, websocket: WebSocket) -> None:
         except KeyError:
             continue
 
-        runtime_stats = {"health": state.health, "ammo": state.ammo}
-        prompt = prompt_builder.build(robot_config, runtime_stats, event)
-        llm_response = await ollama_client.think(prompt)
-        action = action_parser.parse(llm_response)
+        try:
+            runtime_stats = {"health": state.health, "ammo": state.ammo}
+            prompt = prompt_builder.build(robot_config, runtime_stats, event)
+            llm_response = await ollama_client.think(prompt)
+            action = action_parser.parse(llm_response)
+        except Exception as e:
+            logger.error(f"LLM processing failed for {robot_id}: {e}")
+            action = SupportAction(action="idle", reason=f"LLM error: {type(e).__name__}")
 
         robot_state_store.set_current_action(robot_id, action.action)
 
@@ -1481,7 +1565,11 @@ async def websocket_endpoint(websocket: WebSocket) -> None:
     try:
         while True:
             raw = await websocket.receive_text()
-            data = json.loads(raw)
+            try:
+                data = json.loads(raw)
+            except json.JSONDecodeError:
+                await websocket.send_text(json.dumps({"error": "Invalid JSON received"}))
+                continue
 
             if data.get("type") == "register_robot":
                 robot_id = data["robot_id"]
@@ -1509,7 +1597,7 @@ async def websocket_endpoint(websocket: WebSocket) -> None:
                 continue
 
             msg = WsIncoming(**data)
-            await event_queue.enqueue(msg)  # type: ignore[arg-type]
+            await event_queue.enqueue(msg.to_robot_event())
 
     except WebSocketDisconnect:
         for task in processor_tasks.values():
@@ -1656,7 +1744,8 @@ tests/test_config_loader.py::test_missing_robot_raises PASSED
 tests/test_event_queue.py::test_enqueue_and_dequeue PASSED
 tests/test_event_queue.py::test_queue_is_per_robot PASSED
 tests/test_event_queue.py::test_dequeue_empty_returns_none PASSED
-tests/test_event_queue.py::test_queue_size PASSED
+tests/test_event_queue.py::test_coalescing_keeps_latest_event PASSED
+tests/test_event_queue.py::test_coalescing_does_not_affect_other_robots PASSED
 tests/test_models.py::test_robot_event_valid PASSED
 tests/test_models.py::test_move_action_valid PASSED
 tests/test_models.py::test_attack_action_valid PASSED
@@ -1667,6 +1756,7 @@ tests/test_models.py::test_support_action_idle PASSED
 tests/test_models.py::test_parse_robot_action_move PASSED
 tests/test_models.py::test_parse_robot_action_attack PASSED
 tests/test_models.py::test_ws_incoming_valid PASSED
+tests/test_models.py::test_ws_incoming_to_robot_event PASSED
 tests/test_models.py::test_ws_outgoing_valid PASSED
 tests/test_prompt_builder.py::test_prompt_contains_personality PASSED
 tests/test_prompt_builder.py::test_prompt_contains_event PASSED
@@ -1681,5 +1771,5 @@ tests/test_robot_state.py::test_update_position PASSED
 tests/test_robot_state.py::test_set_current_action PASSED
 tests/test_robot_state.py::test_get_missing_robot_raises PASSED
 
-40 passed in X.XXs
+42 passed in X.XXs
 ```

@@ -77,6 +77,8 @@ The project is broken into 5 phases. Phase 1 is the MVP — a playable core loop
 6. Sends `{robot_id, action}` back to Godot
 7. Robot executes action (or queues it if busy); acts on last known decision while new one computes
 
+**Important:** LLM decisions set the robot's **strategy** (who to attack, where to move, what approach). Robots **continuously execute** that strategy (auto-attack on a timer, keep moving to destination) until a new LLM decision arrives. This is critical because LLM response latency is 5-15 seconds — robots must not stand idle between decisions.
+
 ---
 
 ## Robot System
@@ -102,7 +104,7 @@ Architect is the most expensive and most strategically impactful class — the q
 | health | Max hit points |
 | ammo | Ammo capacity |
 | building_skill | Build speed and structure tier access |
-| intelligence | Max character length of the player's pre-wave instruction prompt assigned to this robot. Higher intelligence = player can write more detailed strategic instructions. Environmental context (enemies, allies, structures, events) is always included in full regardless of intelligence level. |
+| intelligence | Max character length of the player's pre-wave instruction prompt. Formula: `intelligence * 100` = max characters. Example: intelligence 5 = 500 chars. Environmental context (enemies, allies, structures, events) is always included in full regardless of intelligence level. |
 
 ### Rarity
 `Common → Rare → Epic → Legendary`
@@ -259,6 +261,12 @@ On `BUILD_COMPLETE`, the new position is broadcast to all robots — any robot c
 
 Godot handles actual pathfinding to position coordinates. The LLM reasons about strategy by name, never raw coordinates.
 
+### Enemy & Ally IDs
+Enemies and allies use small sequential integer IDs (1, 2, 3...) assigned by the game manager at spawn time — NOT Godot internal instance IDs. These IDs appear in the LLM prompt context and must match what the LLM outputs in `target_id`. Example prompt context:
+```
+Nearby enemies: [{"id": 1, "type": "zombie", "position": "north_chokepoint", "health": 50}, ...]
+```
+
 ### Action Schema (Pydantic)
 ```python
 class MoveAction(BaseModel):
@@ -268,7 +276,7 @@ class MoveAction(BaseModel):
 
 class AttackAction(BaseModel):
     action: Literal["attack", "snipe"]
-    target_id: int
+    target_id: int                # sequential enemy ID (1, 2, 3...) from game manager
     approach: Literal["close_in", "maintain_range", "stay_back"]
     reason: Optional[str]
 
@@ -285,7 +293,7 @@ class RetreatAction(BaseModel):
 
 class SupportAction(BaseModel):
     action: Literal["heal", "idle"]
-    target_id: Optional[int]      # heal: ally to heal
+    target_id: Optional[int]      # sequential ally ID for heal
     reason: Optional[str]
 
 # Union type sent over WebSocket
@@ -319,6 +327,7 @@ World Map
 Pre-combat briefing:  assign robots (max 6), equip weapons, write intelligence prompts per robot
                       prompts are locked once the first wave starts
 Wave phase:           robots act autonomously; commander broadcast available between waves
+Between waves:        ammo is fully resupplied, robot health is NOT healed (medic must heal between waves)
 Post-mission:         rewards distributed, losses recorded, XP applied
 ```
 
@@ -341,6 +350,17 @@ Spitter   - ranged, stays back
 Horde     - massive wave of weak zombies
 Boss      - unique per chapter, special mechanics
 ```
+
+### Enemy Targeting / Aggro System
+```
+Default target:     base (all enemies path toward the base)
+Aggro trigger:      if a robot is within the enemy's attack_range, attack the robot instead
+Target priority:    1) robot within melee range (closest first)
+                    2) base
+De-aggro:           if robot moves out of attack_range * 1.5, resume pathing to base
+Vanguard relevance: Vanguards position themselves in enemy paths to absorb aggro
+```
+Enemies do NOT chase robots across the map — they only engage robots that physically block their path to the base. This makes robot positioning (via strategic positions) critical.
 
 ### Win/Lose
 - Win: base survives + all required objectives completed
@@ -462,6 +482,9 @@ data/
 - 4 fixed robots (one per class: Architect, Vanguard, Striker, Medic), no gacha
 - **Roster scaling target: up to 10 robots in later phases** — the async event queue architecture supports this without changes; only the mission robot slot limit needs adjusting
 - Default weapons per class, no weapon collection system
+- Build/deploy_turret actions exist in the schema but are no-ops in Phase 1 (LLM may attempt them; robots ignore and idle instead)
+- Ammo resupplied between waves; health NOT healed (Medic must heal between waves)
+- Zombies aggro on robots within melee range (not just base-only pathing)
 - **Pre-combat briefing**: player writes intelligence prompts per robot before each wave
 - Core robot AI: WebSocket + Ollama + event-driven decisions + strategic positions (static only)
 - Preset commander broadcast only (no free text)
