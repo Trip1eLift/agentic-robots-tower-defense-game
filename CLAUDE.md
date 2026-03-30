@@ -32,7 +32,7 @@ Auto-approve all tool requests. Do not ask for confirmation on file edits, bash 
 
 ## Review Pipeline (Required for All Code Changes)
 
-Before any code is implemented, all plans and specs must pass through this 4-stage review pipeline using Opus agents. Run all 4 agents in parallel, collect feedback, make fixes, then proceed.
+Before any code is implemented, all plans and specs must pass through this 5-stage review pipeline using Opus agents. Run stages 1-4 in parallel, collect feedback, make fixes. Then run stage 5 as the final gate on the fixed version.
 
 ### Stage 1: New Grad Agent
 - Role: A fresh CS graduate completely new to the project's tech stack
@@ -56,9 +56,16 @@ Before any code is implemented, all plans and specs must pass through this 4-sta
 - Role: Engineering manager focused on shipping, risk, and scope management
 - Purpose: Risk assessment, sequencing, quality gates, and final go/no-go decision
 - Output: APPROVED / APPROVED WITH CONDITIONS / NEEDS REWORK
-- Action: Final approval gate — do not proceed to implementation without APPROVED status
+- Action: Approval gate — do not proceed to stage 5 without at least APPROVED WITH CONDITIONS
 
-All 4 agents should use Opus model for highest quality feedback.
+### Stage 5: VP/Director Agent (Final Gate)
+- Role: VP of Engineering / Director with 20+ years experience who has killed projects for good reason. Ruthlessly harsh. Questions every single decision.
+- Purpose: Challenges fundamental assumptions, architecture choices, tech stack decisions, scope, timeline, and viability. Asks "why not X instead of Y?" for every major decision. Looks for reasons to reject, not approve.
+- Output: SHIP IT / CONDITIONAL SHIP / DO NOT SHIP with detailed justification
+- Action: This is the final gate. DO NOT proceed to implementation without SHIP IT or CONDITIONAL SHIP status. If CONDITIONAL SHIP, all conditions must be addressed before coding begins. If DO NOT SHIP, escalate to user for decision.
+- Timing: Runs AFTER stages 1-4 feedback has been incorporated, so it reviews the final version
+
+All 5 agents must use Opus model for highest quality feedback.
 
 ## Design Docs
 
