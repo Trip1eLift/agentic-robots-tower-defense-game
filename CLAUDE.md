@@ -135,6 +135,24 @@ Implementation follows an **implement → review → fix → iterate** cycle. Im
 - Runs after both backend and Godot reach a connectable state
 - Tests: WebSocket message format alignment, enemy ID round-trip, full mission flow
 
+### Art Pipeline
+
+Claude cannot generate images. During each implementation cycle, the **PM agent** (Stage 2 reviewer) also identifies art assets needed for the work just built and writes art request descriptions.
+
+**Process:**
+1. After each implementation cycle, PM writes art requests to `docs/art-requests/`
+2. Each request is a markdown file named `<asset-name>.md` containing:
+   - **Asset name:** e.g. `robot_hana_portrait`
+   - **Type:** sprite / portrait / UI element / tilemap / icon
+   - **Dimensions:** e.g. 64x64, 256x256
+   - **Art style:** e.g. anime, pixel art, painterly
+   - **Description:** detailed visual description for image generation
+   - **Usage:** where it goes in the game (e.g. `godot/assets/robots/hana/portrait.png`)
+   - **Priority:** critical (blocks gameplay) / nice-to-have (placeholder works for now)
+3. The user generates the art externally (Stable Diffusion, Midjourney, etc.) based on the request
+4. User imports the PNG into the specified path
+5. Colored rectangle placeholders are used until art is delivered — game must always be playable without final art
+
 ### Coordination Rules
 - Backend and Godot implementors start simultaneously. Backend does not need to finish first — Godot uses mock/stub WebSocket responses until backend is ready.
 - When both reach Task 10+ (backend WebSocket server + Godot WebSocket client), the integration implementor kicks in.
