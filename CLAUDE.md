@@ -24,7 +24,7 @@ This is the heartbeat of all work in this project. **Harness Engineering** means
 ║     Address every issue from reviewers. No exceptions.    ║
 ╠═══════════════════════════════════════════════════════════╣
 ║  4. COMMIT & ITERATE                                      ║
-║     Push clean code. Move to next chunk. Repeat.          ║
+║     Push to FEATURE BRANCH (never main). Next chunk.      ║
 ╚═══════════════════════════════════════════════════════════╝
 ```
 
@@ -33,6 +33,8 @@ This is the heartbeat of all work in this project. **Harness Engineering** means
 **Playtest gates:** At designated checkpoints, the cycle pauses for a full playthrough before continuing.
 
 **This loop is non-negotiable.** This is Harness Engineering — no code ships without passing review. No review is skipped because "it's a small change." Quality is not a phase; it is the process.
+
+**⚠ CRITICAL: ALL code changes go to feature branches. NEVER commit to `main` directly.** Create the branch BEFORE writing any code. Main is only updated via merged pull requests.
 
 ---
 
@@ -150,7 +152,10 @@ Every chunk of implemented code passes through ALL 5 stages. Stages 1-4 run in p
 
 ## Stage 4: COMMIT & ITERATE
 
-- Push clean code to the feature branch.
+- **All commits go to the feature branch. NEVER to main.**
+- If no feature branch exists yet, create one BEFORE committing: `git checkout -b feat/<feature-name>`
+- Push to remote with `-u` flag on first push.
+- Main is ONLY updated via merged pull requests after a full Harness Engineering cycle.
 - Update task progress.
 - Move to the next chunk. Return to Stage 1.
 
@@ -174,11 +179,13 @@ Every chunk of implemented code passes through ALL 5 stages. Stages 1-4 run in p
 
 ## Git Workflow
 
-**All code changes must be on feature branches — never commit directly to `main`.**
+**⚠ NEVER commit to `main`. All changes go to feature branches.**
 
+- Create branch FIRST: `git checkout -b feat/<feature-name>`
 - Branch naming: `feat/<feature>`, `fix/<bug>`, `chore/<task>`
-- All work goes through pull requests
-- Documentation edits during brainstorming/planning are exempt
+- All work goes through pull requests — main is updated ONLY via merged PRs
+- If you find yourself on `main` with uncommitted changes, stash and create a branch immediately
+- Documentation-only edits during brainstorming/planning sessions are the sole exception
 
 ---
 
