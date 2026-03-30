@@ -135,23 +135,39 @@ Implementation follows an **implement → review → fix → iterate** cycle. Im
 - Runs after both backend and Godot reach a connectable state
 - Tests: WebSocket message format alignment, enemy ID round-trip, full mission flow
 
+**Pixel Artist**
+- Owns: `godot/assets/` placeholder sprites
+- Creates simple retro pixel art (16x16 to 64x64) for all game entities: robots, enemies, structures, UI icons, map tiles
+- Style: old-school Mario/Zelda — simple silhouettes, 2-3 colors per sprite, visually distinct per class
+- Delivers PNG files directly into the asset folders referenced by scene files
+- Runs in parallel with implementors — art should be ready when scenes need it
+
 ### Art Pipeline
 
 Claude cannot generate images. During each implementation cycle, the **PM agent** (Stage 2 reviewer) also identifies art assets needed for the work just built and writes art request descriptions.
 
-**Process:**
-1. After each implementation cycle, PM writes art requests to `docs/art-requests/`
-2. Each request is a markdown file named `<asset-name>.md` containing:
-   - **Asset name:** e.g. `robot_hana_portrait`
-   - **Type:** sprite / portrait / UI element / tilemap / icon
-   - **Dimensions:** e.g. 64x64, 256x256
-   - **Art style:** e.g. anime, pixel art, painterly
-   - **Description:** detailed visual description for image generation
-   - **Usage:** where it goes in the game (e.g. `godot/assets/robots/hana/portrait.png`)
-   - **Priority:** critical (blocks gameplay) / nice-to-have (placeholder works for now)
-3. The user generates the art externally (Stable Diffusion, Midjourney, etc.) based on the request
-4. User imports the PNG into the specified path
-5. Colored rectangle placeholders are used until art is delivered — game must always be playable without final art
+**Two-track art process:**
+
+**Track 1: Pixel Artist Agent (immediate, placeholder-quality)**
+- A **Pixel Artist agent** creates simple retro-style pixel art (think old Mario / early Zelda) as temporary game sprites
+- Runs during each implementation cycle alongside implementors
+- Generates pixel art descriptions as GDScript tool scripts or uses Godot's built-in drawing to create simple sprites programmatically
+- Outputs small PNG files (16x16, 32x32, 64x64) directly to `godot/assets/`
+- Style: simple, readable silhouettes with 2-3 colors per sprite. Must be visually distinct per class/enemy type.
+- These replace colored rectangles immediately so the game looks and feels like a game during development
+
+**Track 2: Final Art Requests (user-generated, production-quality)**
+- PM writes detailed art requests to `docs/art-requests/` for final production art
+- Each request is a markdown file named `<asset-name>.md` containing:
+  - **Asset name:** e.g. `robot_hana_portrait`
+  - **Type:** sprite / portrait / UI element / tilemap / icon
+  - **Dimensions:** e.g. 64x64, 256x256
+  - **Art style:** e.g. anime, pixel art, painterly
+  - **Description:** detailed visual description for image generation
+  - **Usage:** where it goes in the game (e.g. `godot/assets/robots/hana/portrait.png`)
+  - **Priority:** critical (blocks gameplay) / nice-to-have (pixel art placeholder works for now)
+- User generates final art externally (Stable Diffusion, Midjourney, etc.) and imports PNGs
+- Final art replaces pixel art placeholders when ready — game must always be playable at every stage
 
 ### Coordination Rules
 - Backend and Godot implementors start simultaneously. Backend does not need to finish first — Godot uses mock/stub WebSocket responses until backend is ready.
