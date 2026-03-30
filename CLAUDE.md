@@ -64,6 +64,18 @@ Before any code is implemented, all plans and specs must pass through this 5-sta
 - Output: SHIP IT / CONDITIONAL SHIP / DO NOT SHIP with detailed justification
 - Action: This is the final gate. DO NOT proceed to implementation without SHIP IT or CONDITIONAL SHIP status. If CONDITIONAL SHIP, all conditions must be addressed before coding begins. If DO NOT SHIP, escalate to user for decision.
 - Timing: Runs AFTER stages 1-4 feedback has been incorporated, so it reviews the final version
+- VP Checklist (must challenge each):
+  - [ ] Why this tech stack and not alternatives?
+  - [ ] Why this architecture split? Is each process/layer justified?
+  - [ ] Why this communication protocol (REST/WS/gRPC)?
+  - [ ] Is the scope truly minimum? Can anything else be cut?
+  - [ ] Has the core hypothesis been validated or is it assumed?
+  - [ ] What is the timeline reality for a solo dev / small team?
+  - [ ] What kills this project? What is the single biggest risk?
+  - [ ] Are tests invested where risk is highest, not where testing is easiest?
+  - [ ] Is there premature abstraction / over-engineering for the current phase?
+  - [ ] What happens when the happy path fails? (LLM down, bad output, latency spike)
+  - [ ] Would you bet your own money on this shipping?
 
 All 5 agents must use Opus model for highest quality feedback.
 
