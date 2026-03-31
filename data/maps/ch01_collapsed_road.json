@@ -1,0 +1,42 @@
+{
+  "id": "ch01_collapsed_road",
+  "name": "Collapsed Road",
+  "tilemap": "res://maps/ch01_collapsed_road.tscn",
+  "base_position": [512, 500],
+  "robot_spawn_zones": [
+    {"id": "zone_main", "rect": [350, 400, 320, 120]}
+  ],
+  "enemy_spawn_points": [
+    {"id": "spawn_north", "position": [512, 50]},
+    {"id": "spawn_west",  "position": [50,  300]}
+  ],
+  "buildable_zones": [
+    {"rect": [200, 150, 600, 350], "max_structures": 8}
+  ],
+  "strategic_positions": [
+    {
+      "id": "north_chokepoint",
+      "description": "Narrow gap in rubble on north path, good for Vanguard to hold the line",
+      "position": [512, 200],
+      "suitable_for": ["vanguard", "architect"]
+    },
+    {
+      "id": "west_flank",
+      "description": "Open ground on west approach, good for Striker to pick off enemies at range",
+      "position": [200, 300],
+      "suitable_for": ["striker"]
+    },
+    {
+      "id": "base_entrance",
+      "description": "Last defensive line directly in front of the base",
+      "position": [512, 420],
+      "suitable_for": ["vanguard", "medic"]
+    },
+    {
+      "id": "rear_support",
+      "description": "Safe position behind the front line, ideal for Medic and Architect",
+      "position": [512, 460],
+      "suitable_for": ["medic", "architect"]
+    }
+  ]
+}
