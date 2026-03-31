@@ -123,6 +123,28 @@ func _physics_process(delta: float) -> void:
 		return
 	_execute_movement()
 	_check_enemy_in_range()
+	_auto_attack_if_idle()
+
+# Auto-attack nearest enemy when idle (no LLM action yet or between decisions)
+func _auto_attack_if_idle() -> void:
+	if attack_timer.is_stopped() and not _enemies_in_perception.is_empty():
+		var action_name = _current_action.get("action", "idle")
+		if action_name in ["idle", "move", "retreat", ""]:
+			# Find nearest valid enemy
+			var nearest: Node2D = null
+			var nearest_dist := 999999.0
+			for e in _enemies_in_perception:
+				if is_instance_valid(e):
+					var d = global_position.distance_to(e.global_position)
+					if d < nearest_dist:
+						nearest_dist = d
+						nearest = e
+			if nearest:
+				var attack_range = _config.get("base_stats", {}).get("attack_range", 120.0)
+				if nearest_dist <= attack_range:
+					_target_enemy = nearest
+					_perform_attack()
+					attack_timer.start()
 
 func _execute_movement() -> void:
 	if nav_agent.is_navigation_finished():
@@ -238,6 +260,10 @@ func _die() -> void:
 	_is_dead = true
 	CampaignManager.mark_robot_dead(robot_id)
 	GameRecorder.log_robot_died(robot_id)
+	# Check if all robots are dead -- trigger mission loss
+	var alive_count = get_tree().get_nodes_in_group("robots").size()
+	if alive_count == 0:
+		GameManager.on_base_destroyed()  # reuse loss handler
 	set_physics_process(false)
 	set_process(false)
 	remove_from_group("robots")

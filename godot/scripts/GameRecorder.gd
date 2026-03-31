@@ -8,14 +8,26 @@ var _recording: bool = false
 var _mission_id: String = ""
 var _start_time_ms: int = 0
 
-const RECORD_PATH = "user://game_recording.json"
+var RECORD_PATH: String = ProjectSettings.globalize_path("res://").get_base_dir().path_join("e2e_recording.json")
+const FLUSH_INTERVAL_SEC = 5.0
+var _flush_timer: float = 0.0
+
+func _process(delta: float) -> void:
+	if _recording:
+		_flush_timer += delta
+		if _flush_timer >= FLUSH_INTERVAL_SEC:
+			_flush_timer = 0.0
+			_save()
 
 func start_recording(mission_id: String) -> void:
 	_mission_id = mission_id
 	_recording = true
 	_start_time_ms = Time.get_ticks_msec()
+	_flush_timer = 0.0
 	_events.clear()
 	_log("RECORDING_START", {"mission_id": mission_id})
+	_save()
+	print("GameRecorder: started recording for ", mission_id)
 
 func stop_recording(result: String) -> void:
 	_log("RECORDING_END", {"mission_id": _mission_id, "result": result, "total_events": _events.size()})

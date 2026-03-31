@@ -5,17 +5,18 @@ extends Control
 
 func _ready() -> void:
 	if AutoPlay.is_enabled():
-		# Skip lore, reset campaign, auto-start first uncompleted mission
 		CampaignManager.reset_campaign()
 		var current = _get_next_mission()
 		CampaignManager.set_current_mission(current)
 		print("AutoPlay: starting mission ", current)
-		# Store default instructions
 		var instructions = {}
 		for r in ConfigLoader.get_all_robots():
 			instructions[r["id"]] = _get_default_instructions(r.get("class", ""))
 		CampaignManager.set_meta("player_instructions", instructions)
-		get_tree().change_scene_to_file("res://scenes/Game.tscn")
+		# Wait for WebSocket to connect before changing scene
+		if not WebSocketClient._is_connected:
+			await WebSocketClient.connected
+		get_tree().change_scene_to_file.call_deferred("res://scenes/Game.tscn")
 		return
 
 	# Normal flow: show intro

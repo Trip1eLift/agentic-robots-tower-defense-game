@@ -21,6 +21,10 @@ func _ready() -> void:
 	if CampaignManager.has_meta("player_instructions"):
 		player_instructions = CampaignManager.get_meta("player_instructions")
 
+	# Wait for WebSocket connection before spawning
+	if not WebSocketClient._is_connected:
+		await WebSocketClient.connected
+
 	# Only spawn robots that survived previous missions
 	var robot_configs = CampaignManager.get_alive_robots()
 	GameManager.spawn_robots(robot_configs, player_instructions)
