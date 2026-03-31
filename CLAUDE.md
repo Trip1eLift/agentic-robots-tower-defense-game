@@ -164,9 +164,45 @@ Every chunk of implemented code passes through ALL 5 stages. Stages 1-4 run in p
   "/c/Program Files/GitHub CLI/gh.exe" pr create --title "..." --body "..."
   ```
 - PRs are auto-merged after VP approval (no manual approval needed). The 5-stage gauntlet IS the approval process.
-- After merge, switch back to main, pull, and start the next cycle on a new branch.
 - Update task progress.
-- Move to the next chunk. Return to Stage 1.
+- **Do NOT stop between cycles.** Immediately return to Stage 1 for the next chunk.
+
+### Stacked PR Workflow
+
+Subsequent chunks within the same phase use **stacked PRs** -- child branches off the current feature branch, with PRs targeting the parent branch (not main).
+
+```
+main
+ └── feat/phase1-python-backend          ← PR #1 → main
+      └── feat/phase1-tasks-4-6          ← PR #2 → feat/phase1-python-backend
+           └── feat/phase1-tasks-7-8     ← PR #3 → feat/phase1-tasks-4-6
+```
+
+- **First chunk** of a phase: branch off `main`, PR targets `main`
+- **Subsequent chunks**: branch off the current feature branch, PR targets the parent branch
+- Create child branch BEFORE writing code: `git checkout -b feat/phase1-tasks-X-Y`
+- PRs merge bottom-up: child into parent, then parent into main
+- Use `--base` flag when creating stacked PRs:
+  ```
+  "/c/Program Files/GitHub CLI/gh.exe" pr create --base feat/parent-branch --title "..." --body "..."
+  ```
+
+### Non-Stop Harness Cycle
+
+The harness loop runs continuously without pausing for user input between cycles:
+
+```
+Cycle 1: Implement → Review → Fix → Commit → PR
+                                                ↓ (no stop)
+Cycle 2: Implement → Review → Fix → Commit → PR
+                                                ↓ (no stop)
+Cycle 3: Implement → Review → Fix → Commit → PR
+```
+
+- After each PR is created, immediately start the next chunk
+- Run Stages 2a-2d as a single consolidated review agent (not 4 separate agents) to save time on subsequent cycles after the first
+- Stage 2e (VP gate) runs on the first chunk of each phase and at playtest gates; subsequent chunks within the same phase skip Stage 2e unless the consolidated review raises architectural concerns
+- Only pause for user input at playtest gates or when blocked
 
 ---
 
@@ -195,6 +231,7 @@ Every chunk of implemented code passes through ALL 5 stages. Stages 1-4 run in p
 - All work goes through pull requests — main is updated ONLY via merged PRs
 - If you find yourself on `main` with uncommitted changes, stash and create a branch immediately
 - Documentation-only edits during brainstorming/planning sessions are the sole exception
+- Use stacked PRs for multi-chunk phases (see Stage 4 for details)
 
 ---
 
