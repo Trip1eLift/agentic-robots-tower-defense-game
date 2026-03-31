@@ -73,6 +73,15 @@ Auto-approve all tool requests. Do not ask for confirmation on file edits, bash 
 - Style: old-school Mario/Zelda — simple silhouettes, 2-3 colors per sprite, visually distinct per class
 - Delivers PNG files directly into asset folders. Runs in parallel with implementors.
 
+### Testing Requirements
+
+Every implementation chunk MUST include both:
+
+1. **Unit tests** -- Test individual modules in isolation (models, parsers, state stores, etc.). Mock external dependencies. Run fast.
+2. **Integration tests** -- Test components wired together end-to-end (e.g., WebSocket server: register -> event -> action response). Use real server instances with mock LLM via `TestClient` or equivalent.
+
+Both test types must pass before committing. Integration tests are not optional and not deferred -- they ship in the same PR as the code they test. If a component connects to other components, it needs integration tests.
+
 ### Implementor Principles
 - **Speed over perfection.** Ship working code, iterate, fix forward. Don't gold-plate.
 - **Parallel by default.** Independent tasks run simultaneously via worktrees or branches.
