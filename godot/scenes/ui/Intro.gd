@@ -7,7 +7,7 @@ extends Control
 signal intro_finished()
 
 const LORE_LINES = [
-	"[center][b]YEAR 2847[/b][/center]",
+	"[center][b]YEAR 2047[/b][/center]",
 	"",
 	"[center]The sun betrayed us.[/center]",
 	"",
