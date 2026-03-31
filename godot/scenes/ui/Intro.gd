@@ -80,7 +80,7 @@ func _on_type_tick() -> void:
 	else:
 		_typing = false
 		fade_timer.stop()
-		skip_label.text = "Press any key to continue..."
+		skip_label.text = "Press any key to start a new campaign..."
 		skip_label.modulate.a = 1.0
 
 func _input(event: InputEvent) -> void:
@@ -93,7 +93,9 @@ func _input(event: InputEvent) -> void:
 			fade_timer.stop()
 			_char_index = _full_text.length()
 			lore_label.text = _full_text
-			skip_label.text = "Press any key to continue..."
+			skip_label.text = "Press any key to start a new campaign..."
 			skip_label.modulate.a = 1.0
 		else:
+			# Always start fresh campaign from the lore screen
+			CampaignManager.reset_campaign()
 			intro_finished.emit()

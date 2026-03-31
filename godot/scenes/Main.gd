@@ -9,8 +9,8 @@ func _ready() -> void:
 	if CampaignManager.is_party_wiped():
 		CampaignManager.reset_campaign()
 
-	# Only show intro on first mission (or after campaign reset)
-	_show_intro = not CampaignManager.has_meta("intro_seen")
+	# Always show intro -- it resets the campaign on continue
+	_show_intro = true
 
 	var missions = ["ch01_mission_01", "ch01_mission_02", "ch01_mission_03"]
 	var current = ""
@@ -32,7 +32,6 @@ func _ready() -> void:
 		_setup_briefing(current)
 
 func _on_intro_finished() -> void:
-	CampaignManager.set_meta("intro_seen", true)
 	intro.visible = false
 	briefing.visible = true
 	_setup_briefing(CampaignManager.get_current_mission())

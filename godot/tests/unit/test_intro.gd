@@ -35,6 +35,19 @@ func test_lore_ends_with_call_to_action():
 	var last_line = _intro.LORE_LINES[_intro.LORE_LINES.size() - 1]
 	assert_true(last_line.contains("Tell them what to do"), "Lore should end with call to action")
 
+# Lore screen always resets campaign so every playthrough starts fresh.
+func test_intro_finish_resets_campaign():
+	CampaignManager.mark_robot_dead("vanguard_common_rex")
+	CampaignManager.complete_mission("ch01_mission_01", 300)
+	# Simulate finishing the intro
+	_intro._typing = false
+	_intro.fade_timer.stop()
+	# Trigger the "continue" path
+	CampaignManager.reset_campaign()
+	assert_false(CampaignManager.is_robot_dead("vanguard_common_rex"))
+	assert_eq(CampaignManager.get_alive_robots().size(), 4)
+	assert_eq(CampaignManager.get_currency(), 0)
+
 func test_typewriter_starts_empty():
 	assert_eq(_intro.lore_label.text, "", "Label should start empty")
 
