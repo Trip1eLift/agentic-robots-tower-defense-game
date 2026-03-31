@@ -14,6 +14,7 @@ def find_recording():
     candidates = [
         Path(__file__).parent / "godot" / "e2e_recording.log",
         Path(__file__).parent / "e2e_recording.log",
+        Path.home() / "AppData/Roaming/Godot/app_userdata/ARIA- Defenders of Duskwall/e2e_recording.log",
     ]
     for p in candidates:
         if p.exists():
@@ -93,12 +94,40 @@ def analyze(events):
         print(f"  Final base health: {base_dmg[-1]['data']['health_remaining']}")
     print()
 
+    # Build mission segments
+    mission_segments = []
+    current_segment = []
+    for e in events:
+        if e["type"] == "RECORDING_START":
+            current_segment = []
+        current_segment.append(e)
+        if e["type"] == "RECORDING_END":
+            mission_segments.append(current_segment)
+
     print("Key event timeline:")
     for e in events:
         if e["type"] in ("WAVE_STARTED", "WAVE_COMPLETED", "ROBOT_DIED", "RECORDING_START", "RECORDING_END"):
             t = e["t"] / 1000.0
             print(f"  [{t:7.1f}s] {e['type']}: {e['data']}")
     print()
+
+    # Per-mission breakdown
+    if mission_segments:
+        print("Per-mission breakdown:")
+        for i, seg in enumerate(mission_segments):
+            seg_kills = len([e for e in seg if e["type"] == "ENEMY_KILLED"])
+            seg_spawned = len([e for e in seg if e["type"] == "ENEMY_SPAWNED"])
+            seg_attacks = len([e for e in seg if e["type"] == "ATTACK"])
+            seg_deaths = len([e for e in seg if e["type"] == "ROBOT_DIED"])
+            seg_heals = len([e for e in seg if e["type"] == "HEAL"])
+            seg_base_dmg = [e for e in seg if e["type"] == "BASE_DAMAGE"]
+            base_dmg_total = sum(e["data"]["amount"] for e in seg_base_dmg)
+            result_evt = [e for e in seg if e["type"] == "RECORDING_END"]
+            result = result_evt[0]["data"]["result"] if result_evt else "?"
+            mid = [e for e in seg if e["type"] == "RECORDING_START"]
+            mid_str = mid[0]["data"]["mission_id"] if mid else "?"
+            print(f"  Mission {i+1} ({mid_str}): {result} | kills={seg_kills}/{seg_spawned} attacks={seg_attacks} deaths={seg_deaths} heals={seg_heals} base_dmg={base_dmg_total}")
+        print()
 
     print("Potential issues:")
     if len(attacks) == 0:
@@ -117,8 +146,14 @@ def analyze(events):
     non_attackers = all_robot_ids - attacker_ids
     if non_attackers:
         print(f"  [WARN] Robots that never attacked: {non_attackers}")
-    if len(robot_deaths) > len(all_robot_ids):
-        print(f"  [BUG] More death events ({len(robot_deaths)}) than robots ({len(all_robot_ids)}) -- duplicate _die() calls")
+    # Check for duplicate deaths within a single mission
+    for i, seg in enumerate(mission_segments):
+        seg_deaths = [e for e in seg if e["type"] == "ROBOT_DIED"]
+        seg_robots = set(e["data"]["robot_id"] for e in seg if e["type"] == "ROBOT_SPAWNED")
+        dead_ids = [e["data"]["robot_id"] for e in seg_deaths]
+        dupes = [rid for rid in set(dead_ids) if dead_ids.count(rid) > 1]
+        if dupes:
+            print(f"  [BUG] Mission {i+1}: duplicate death events for {dupes}")
     remaining = len(enemies_spawned) - len(kills)
     if remaining > 0 and not any(e["type"] == "RECORDING_END" for e in events):
         print(f"  [BUG] {remaining} enemies remaining and no recording end -- game stuck")

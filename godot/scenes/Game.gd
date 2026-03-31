@@ -103,4 +103,5 @@ func _print_recording_summary() -> void:
 
 func _cleanup_and_exit() -> void:
 	GameManager._disconnect_all()
-	get_tree().change_scene_to_file("res://scenes/Main.tscn")
+	if is_inside_tree():
+		get_tree().change_scene_to_file.call_deferred("res://scenes/Main.tscn")

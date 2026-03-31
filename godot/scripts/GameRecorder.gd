@@ -11,7 +11,7 @@ var _file: FileAccess = null
 var _event_count: int = 0
 var _summary: Dictionary = {}
 
-const LOG_PATH = "res://e2e_recording.log"
+const LOG_FILE = "e2e_recording.log"
 
 func start_recording(mission_id: String) -> void:
 	_mission_id = mission_id
@@ -19,11 +19,15 @@ func start_recording(mission_id: String) -> void:
 	_start_time_ms = Time.get_ticks_msec()
 	_event_count = 0
 	_summary = {"attacks": 0, "kills": 0, "robot_deaths": 0, "actions": 0, "events_sent": 0, "heals": 0}
-	var path = ProjectSettings.globalize_path(LOG_PATH)
-	_file = FileAccess.open(path, FileAccess.READ_WRITE)
-	if _file:
-		_file.seek_end(0)
-	else:
+	# Write to project root (parent of godot/)
+	var project_root = ProjectSettings.globalize_path("res://").get_base_dir()
+	var path = project_root.path_join(LOG_FILE)
+	# Always append
+	if FileAccess.file_exists(path):
+		_file = FileAccess.open(path, FileAccess.READ_WRITE)
+		if _file:
+			_file.seek_end(0)
+	if _file == null:
 		_file = FileAccess.open(path, FileAccess.WRITE)
 	if _file == null:
 		push_error("GameRecorder: cannot open " + path)

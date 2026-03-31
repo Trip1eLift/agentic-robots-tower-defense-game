@@ -22,7 +22,7 @@ var _next_enemy_id: int = 1
 var _enemy_id_map: Dictionary = {}
 var _id_enemy_map: Dictionary = {}
 var _stalemate_timer: float = 0.0
-const STALEMATE_TIMEOUT_SEC = 60.0
+const STALEMATE_TIMEOUT_SEC = 30.0
 
 func _process(delta: float) -> void:
 	if _is_wave_active and not _is_spawning:
@@ -47,6 +47,7 @@ func setup_mission(mission_id: String, map: Node) -> void:
 	_commander_broadcast = ""
 	_is_wave_active = false
 	_is_spawning = false
+	_mission_ended = false
 	# Clean up old robots/enemies from previous mission
 	for r in _robots:
 		if is_instance_valid(r):
@@ -86,7 +87,9 @@ func start_next_wave() -> void:
 	var waves = _current_mission.get("waves", [])
 	print("GameManager: start_next_wave called, wave=", _current_wave + 1, "/", waves.size(), " robots=", _robots.size())
 	if _current_wave >= waves.size():
-		mission_won.emit()
+		if not _mission_ended:
+			_mission_ended = true
+			mission_won.emit()
 		return
 	_is_wave_active = true
 	var wave_data = waves[_current_wave]
@@ -107,7 +110,7 @@ func _spawn_wave_enemies(wave_data: Dictionary) -> void:
 			var zombie = ZOMBIE_SCENE.instantiate()
 			_map.add_child(zombie)
 			zombie.global_position = spawn_pos + Vector2(randf_range(-30, 30), randf_range(-30, 30))
-			zombie.setup(enemy_config, _map.base_node)
+			zombie.setup(enemy_config, _map)
 			zombie.died.connect(_on_enemy_died)
 			_enemies.append(zombie)
 			var eid = _next_enemy_id
@@ -154,7 +157,12 @@ func get_enemy_id(enemy: Node2D) -> int:
 func get_enemy_by_id(enemy_id: int) -> Node2D:
 	return _id_enemy_map.get(enemy_id, null)
 
+var _mission_ended: bool = false
+
 func on_base_destroyed() -> void:
+	if _mission_ended:
+		return
+	_mission_ended = true
 	_is_wave_active = false
 	mission_lost.emit()
 
