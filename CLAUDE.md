@@ -176,24 +176,24 @@ Every chunk of implemented code passes through ALL 5 stages. Stages 1-4 run in p
 - Update task progress.
 - **Do NOT stop between cycles.** Immediately return to Stage 1 for the next chunk.
 
-### Stacked PR Workflow
+### Sequential Branch Workflow
 
-Subsequent chunks within the same phase use **stacked PRs** -- child branches off the current feature branch, with PRs targeting the parent branch (not main).
+Each chunk branches off the previous chunk's branch (to have the latest code), but **all PRs target `main` directly**.
 
 ```
 main
- └── feat/phase1-python-backend          ← PR #1 → main
-      └── feat/phase1-tasks-4-6          ← PR #2 → feat/phase1-python-backend
-           └── feat/phase1-tasks-7-8     ← PR #3 → feat/phase1-tasks-4-6
+ └── feat/phase1-python-backend          ← branch from main,   PR → main
+      └── feat/phase1-tasks-4-6          ← branch from above,  PR → main
+           └── feat/phase1-tasks-7-8     ← branch from above,  PR → main
 ```
 
-- **First chunk** of a phase: branch off `main`, PR targets `main`
-- **Subsequent chunks**: branch off the current feature branch, PR targets the parent branch
-- Create child branch BEFORE writing code: `git checkout -b feat/phase1-tasks-X-Y`
-- PRs merge bottom-up: child into parent, then parent into main
-- Use `--base` flag when creating stacked PRs:
+- **First chunk** of a phase: `git checkout -b feat/<name>` from `main`
+- **Subsequent chunks**: `git checkout -b feat/<next-name>` from the current feature branch (so you have all prior code)
+- **All PRs target `main`** -- no stacked PR chains, no merge-order dependencies
+- Merge PRs in order: PR #1, then PR #2 (GitHub auto-resolves since #2 is a superset of #1), etc.
+- Do NOT use `--base` flag (defaults to `main`):
   ```
-  "/c/Program Files/GitHub CLI/gh.exe" pr create --base feat/parent-branch --title "..." --body "..."
+  "/c/Program Files/GitHub CLI/gh.exe" pr create --title "..." --body "..."
   ```
 
 ### PR Description Diagrams
