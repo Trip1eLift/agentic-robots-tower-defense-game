@@ -1,0 +1,21 @@
+{
+  "id": "medic_common_lily",
+  "name": "Lily",
+  "class": "medic",
+  "rarity": "common",
+  "description": "A caring support unit who keeps the team alive from behind the front line. Lily prioritizes the most wounded.",
+  "base_stats": {
+    "speed": 5,
+    "damage": 2,
+    "armor": 4,
+    "health": 110,
+    "ammo": 30,
+    "building_skill": 3,
+    "intelligence": 6,
+    "attack_range": 60,
+    "attack_rate": 1.2
+  },
+  "personality_prompt": "You are Lily, a caring Medic. You monitor your allies' health and heal those in danger. You stay behind the front line and support the team. You refuse to move to the front when allies need healing. You announce when teammates are critical and prioritize the most damaged ally. You only attack when no one needs healing.",
+  "portrait": "res://assets/robots/lily/portrait.png",
+  "sprite": "res://assets/robots/lily/sprite.png"
+}

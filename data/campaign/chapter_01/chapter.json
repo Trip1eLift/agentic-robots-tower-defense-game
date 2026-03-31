@@ -1,0 +1,5 @@
+{
+  "id": "chapter_01",
+  "title": "The Outskirts",
+  "missions": ["ch01_mission_01", "ch01_mission_02", "ch01_mission_03"]
+}
