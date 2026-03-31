@@ -22,6 +22,9 @@ class OllamaClient:
                 ),
                 timeout=30,
             )
+            # SDK v0.3.x returns dict, newer versions return object
+            if isinstance(response, dict):
+                return response["message"]["content"]
             return response.message.content
         except asyncio.TimeoutError:
             logger.error("Ollama request timed out after 30s")
