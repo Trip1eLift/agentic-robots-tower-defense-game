@@ -21,6 +21,10 @@ WebSocketClient="*res://scripts/WebSocketClient.gd"
 CampaignManager="*res://scripts/CampaignManager.gd"
 GameManager="*res://scripts/GameManager.gd"
 
+[editor_plugins]
+
+enabled=PackedStringArray("res://addons/gut/plugin.cfg")
+
 [display]
 
 window/size/viewport_width=1024
