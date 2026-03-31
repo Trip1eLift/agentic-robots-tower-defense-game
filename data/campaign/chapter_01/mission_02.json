@@ -1,0 +1,38 @@
+{
+  "id": "ch01_mission_02",
+  "title": "Hold the Line",
+  "type": "normal",
+  "map_id": "ch01_collapsed_road",
+  "max_robots": 4,
+  "base_health": 500,
+  "reward_currency": 400,
+  "objectives": [
+    {"type": "SURVIVE", "required": true},
+    {"type": "ELIMINATE", "required": false, "target_count": 30}
+  ],
+  "waves": [
+    {
+      "wave_number": 1,
+      "delay_before_wave_sec": 5.0,
+      "enemies": [
+        {"type": "zombie", "count": 10, "spawn_point": "spawn_north", "spawn_interval_sec": 1.2}
+      ]
+    },
+    {
+      "wave_number": 2,
+      "delay_before_wave_sec": 10.0,
+      "enemies": [
+        {"type": "zombie", "count": 8, "spawn_point": "spawn_north", "spawn_interval_sec": 1.0},
+        {"type": "zombie", "count": 7, "spawn_point": "spawn_west", "spawn_interval_sec": 1.0}
+      ]
+    },
+    {
+      "wave_number": 3,
+      "delay_before_wave_sec": 10.0,
+      "enemies": [
+        {"type": "zombie", "count": 10, "spawn_point": "spawn_north", "spawn_interval_sec": 0.8},
+        {"type": "zombie", "count": 10, "spawn_point": "spawn_west", "spawn_interval_sec": 0.8}
+      ]
+    }
+  ]
+}

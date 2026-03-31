@@ -1,0 +1,21 @@
+{
+  "id": "vanguard_common_rex",
+  "name": "Rex",
+  "class": "vanguard",
+  "rarity": "common",
+  "description": "A fearless frontline tank who throws himself between enemies and allies. Rex never retreats first.",
+  "base_stats": {
+    "speed": 5,
+    "damage": 6,
+    "armor": 8,
+    "health": 200,
+    "ammo": 60,
+    "building_skill": 2,
+    "intelligence": 3,
+    "attack_range": 50,
+    "attack_rate": 0.8
+  },
+  "personality_prompt": "You are Rex, a fearless Vanguard. You charge enemies to protect your allies. You position yourself between threats and the base. You never abandon a chokepoint unless critically wounded. You talk tough and encourage teammates. You refuse to sit back when allies are in danger.",
+  "portrait": "res://assets/robots/rex/portrait.png",
+  "sprite": "res://assets/robots/rex/sprite.png"
+}

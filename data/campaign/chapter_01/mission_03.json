@@ -1,0 +1,39 @@
+{
+  "id": "ch01_mission_03",
+  "title": "The Swarm",
+  "type": "normal",
+  "map_id": "ch01_collapsed_road",
+  "max_robots": 4,
+  "base_health": 500,
+  "reward_currency": 500,
+  "objectives": [
+    {"type": "SURVIVE", "required": true},
+    {"type": "ELIMINATE", "required": true, "target_count": 40}
+  ],
+  "waves": [
+    {
+      "wave_number": 1,
+      "delay_before_wave_sec": 5.0,
+      "enemies": [
+        {"type": "zombie", "count": 6, "spawn_point": "spawn_north", "spawn_interval_sec": 1.0},
+        {"type": "zombie", "count": 6, "spawn_point": "spawn_west", "spawn_interval_sec": 1.0}
+      ]
+    },
+    {
+      "wave_number": 2,
+      "delay_before_wave_sec": 8.0,
+      "enemies": [
+        {"type": "zombie", "count": 9, "spawn_point": "spawn_north", "spawn_interval_sec": 0.8},
+        {"type": "zombie", "count": 9, "spawn_point": "spawn_west", "spawn_interval_sec": 0.8}
+      ]
+    },
+    {
+      "wave_number": 3,
+      "delay_before_wave_sec": 8.0,
+      "enemies": [
+        {"type": "zombie", "count": 13, "spawn_point": "spawn_north", "spawn_interval_sec": 0.6},
+        {"type": "zombie", "count": 12, "spawn_point": "spawn_west", "spawn_interval_sec": 0.6}
+      ]
+    }
+  ]
+}

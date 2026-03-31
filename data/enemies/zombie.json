@@ -1,0 +1,16 @@
+{
+  "id": "zombie",
+  "name": "Zombie",
+  "description": "A shambling undead that moves slowly but hits hard. Zombies swarm the base in large groups.",
+  "stats": {
+    "speed": 2,
+    "damage": 8,
+    "health": 50,
+    "armor": 1,
+    "attack_range": 40,
+    "attack_rate": 1.0
+  },
+  "sprite": "res://assets/enemies/zombie/sprite.png",
+  "xp_reward": 10,
+  "behavior": "move_to_base"
+}

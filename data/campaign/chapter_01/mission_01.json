@@ -1,0 +1,37 @@
+{
+  "id": "ch01_mission_01",
+  "title": "First Contact",
+  "type": "normal",
+  "map_id": "ch01_collapsed_road",
+  "max_robots": 4,
+  "base_health": 500,
+  "reward_currency": 300,
+  "objectives": [
+    {"type": "SURVIVE", "required": true}
+  ],
+  "waves": [
+    {
+      "wave_number": 1,
+      "delay_before_wave_sec": 5.0,
+      "enemies": [
+        {"type": "zombie", "count": 8, "spawn_point": "spawn_north", "spawn_interval_sec": 1.5}
+      ]
+    },
+    {
+      "wave_number": 2,
+      "delay_before_wave_sec": 10.0,
+      "enemies": [
+        {"type": "zombie", "count": 6, "spawn_point": "spawn_north", "spawn_interval_sec": 1.2},
+        {"type": "zombie", "count": 6, "spawn_point": "spawn_west", "spawn_interval_sec": 1.2}
+      ]
+    },
+    {
+      "wave_number": 3,
+      "delay_before_wave_sec": 10.0,
+      "enemies": [
+        {"type": "zombie", "count": 8, "spawn_point": "spawn_north", "spawn_interval_sec": 1.0},
+        {"type": "zombie", "count": 8, "spawn_point": "spawn_west", "spawn_interval_sec": 1.0}
+      ]
+    }
+  ]
+}
