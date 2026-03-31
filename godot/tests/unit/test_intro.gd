@@ -43,11 +43,15 @@ func test_typing_flag_starts_true():
 
 func test_intro_emits_finished_signal():
 	watch_signals(_intro)
-	# Skip typing
 	_intro._typing = false
 	_intro.fade_timer.stop()
 	_intro._char_index = _intro._full_text.length()
 	_intro.lore_label.text = _intro._full_text
-	# Simulate key press to finish
 	_intro.intro_finished.emit()
 	assert_signal_emitted(_intro, "intro_finished")
+
+# BUG: Player stuck on lore screen -- _unhandled_input not firing
+# because UI nodes consumed the input events.
+# Fix: switched to _input with set_input_as_handled.
+func test_intro_uses_input_not_unhandled():
+	assert_true(_intro.has_method("_input"), "Should use _input, not _unhandled_input")

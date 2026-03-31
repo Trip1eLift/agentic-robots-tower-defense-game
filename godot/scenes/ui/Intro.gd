@@ -83,10 +83,12 @@ func _on_type_tick() -> void:
 		skip_label.text = "Press any key to continue..."
 		skip_label.modulate.a = 1.0
 
-func _unhandled_input(event: InputEvent) -> void:
-	if event is InputEventKey and event.pressed:
+func _input(event: InputEvent) -> void:
+	if not visible:
+		return
+	if (event is InputEventKey or event is InputEventMouseButton) and event.pressed:
+		get_viewport().set_input_as_handled()
 		if _typing:
-			# Skip typing, show full text
 			_typing = false
 			fade_timer.stop()
 			_char_index = _full_text.length()
