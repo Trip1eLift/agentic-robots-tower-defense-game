@@ -44,6 +44,8 @@ Auto-approve all tool requests. Do not ask for confirmation on file edits, bash 
 
 **Self-service first.** Before asking the user to do anything manually (install software, run commands, click buttons, open files), always attempt to do it yourself via CLI/tools. Only ask the user as a last resort when the action truly requires human interaction (e.g., GUI-only operations with no CLI equivalent, physical device access). If you're unsure whether you can do it yourself, try first.
 
+**Verify before claiming done.** After every action, verify the result before reporting success. Examples: after creating a PR, run `gh pr view` to confirm it exists; after running tests, check the exit code and output; after writing a file, confirm it was written; after a git push, verify the remote received it. Never say "done" based on assumption -- always check.
+
 ## Response Style
 
 **NEVER use emojis in chat responses, code, comments, commit messages, or PR descriptions.** The statusline uses emojis for display — those are UI only and must NOT be echoed or mimicked in any text output. This includes: no emoji in markdown, no emoji in git commits, no emoji in file content. Plain text only.
