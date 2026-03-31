@@ -13,6 +13,9 @@ from collections import Counter
 def find_recording():
     """Find the most recent game recording."""
     candidates = [
+        Path(__file__).parent / "e2e_recording.json",
+        Path(__file__).parent / "godot" / "e2e_recording.json",
+        Path.home() / "AppData/Roaming/Godot/app_userdata/ARIA- Defenders of Duskwall/game_recording.json",
         Path.home() / "AppData/Roaming/Godot/app_userdata/ARIA: Defenders of Duskwall/game_recording.json",
         Path.home() / "AppData/Roaming/Godot/app_userdata/Agentic Robots Tower Defense/game_recording.json",
     ]
