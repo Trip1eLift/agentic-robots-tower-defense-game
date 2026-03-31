@@ -42,6 +42,10 @@ This is the heartbeat of all work in this project. **Harness Engineering** means
 
 Auto-approve all tool requests. Do not ask for confirmation on file edits, bash commands, or any other tool usage.
 
+**Self-service first.** Before asking the user to do anything manually (install software, run commands, click buttons, open files), always attempt to do it yourself via CLI/tools. Only ask the user as a last resort when the action truly requires human interaction (e.g., GUI-only operations with no CLI equivalent, physical device access). If you're unsure whether you can do it yourself, try first.
+
+**Verify before claiming done.** After every action, verify the result before reporting success. Examples: after creating a PR, run `gh pr view` to confirm it exists; after running tests, check the exit code and output; after writing a file, confirm it was written; after a git push, verify the remote received it. Never say "done" based on assumption -- always check.
+
 ## Response Style
 
 **NEVER use emojis in chat responses, code, comments, commit messages, or PR descriptions.** The statusline uses emojis for display — those are UI only and must NOT be echoed or mimicked in any text output. This includes: no emoji in markdown, no emoji in git commits, no emoji in file content. Plain text only.
@@ -176,24 +180,24 @@ Every chunk of implemented code passes through ALL 5 stages. Stages 1-4 run in p
 - Update task progress.
 - **Do NOT stop between cycles.** Immediately return to Stage 1 for the next chunk.
 
-### Stacked PR Workflow
+### Sequential Branch Workflow
 
-Subsequent chunks within the same phase use **stacked PRs** -- child branches off the current feature branch, with PRs targeting the parent branch (not main).
+Each chunk branches off the previous chunk's branch (to have the latest code), but **all PRs target `main` directly**.
 
 ```
 main
- └── feat/phase1-python-backend          ← PR #1 → main
-      └── feat/phase1-tasks-4-6          ← PR #2 → feat/phase1-python-backend
-           └── feat/phase1-tasks-7-8     ← PR #3 → feat/phase1-tasks-4-6
+ └── feat/phase1-python-backend          ← branch from main,   PR → main
+      └── feat/phase1-tasks-4-6          ← branch from above,  PR → main
+           └── feat/phase1-tasks-7-8     ← branch from above,  PR → main
 ```
 
-- **First chunk** of a phase: branch off `main`, PR targets `main`
-- **Subsequent chunks**: branch off the current feature branch, PR targets the parent branch
-- Create child branch BEFORE writing code: `git checkout -b feat/phase1-tasks-X-Y`
-- PRs merge bottom-up: child into parent, then parent into main
-- Use `--base` flag when creating stacked PRs:
+- **First chunk** of a phase: `git checkout -b feat/<name>` from `main`
+- **Subsequent chunks**: `git checkout -b feat/<next-name>` from the current feature branch (so you have all prior code)
+- **All PRs target `main`** -- no stacked PR chains, no merge-order dependencies
+- Merge PRs in order: PR #1, then PR #2 (GitHub auto-resolves since #2 is a superset of #1), etc.
+- Do NOT use `--base` flag (defaults to `main`):
   ```
-  "/c/Program Files/GitHub CLI/gh.exe" pr create --base feat/parent-branch --title "..." --body "..."
+  "/c/Program Files/GitHub CLI/gh.exe" pr create --title "..." --body "..."
   ```
 
 ### PR Description Diagrams
