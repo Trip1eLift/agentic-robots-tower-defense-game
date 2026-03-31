@@ -117,5 +117,6 @@ class WsIncoming(BaseModel):
 
 
 class WsOutgoing(BaseModel):
+    type: Literal["robot_action"] = "robot_action"
     robot_id: str
     action: RobotAction
