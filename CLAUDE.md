@@ -187,6 +187,26 @@ main
   "/c/Program Files/GitHub CLI/gh.exe" pr create --base feat/parent-branch --title "..." --body "..."
   ```
 
+### PR Description Diagrams
+
+Every PR body MUST include two ASCII diagrams:
+
+1. **High-level integration diagram** -- Shows where this PR fits in the full PR stack and how it connects to other PRs/components. Shows the big picture.
+
+2. **Low-level detail diagram** -- Shows the specific data flow, modules, and features introduced in THIS PR. Shows what changed and how data moves through the new code.
+
+Use box-drawing characters and arrows. Keep diagrams compact but informative. Example structure:
+
+```
+## Architecture
+
+### Where this fits (high-level)
+<ASCII diagram showing PR stack and system-level integration>
+
+### What this PR does (detail)
+<ASCII diagram showing modules, data flow, and features in this PR>
+```
+
 ### Non-Stop Harness Cycle
 
 The harness loop runs continuously without pausing for user input between cycles:
