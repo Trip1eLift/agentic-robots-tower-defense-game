@@ -1,6 +1,13 @@
 # Claude Code local settings (personal overrides, not for sharing)
 .claude/settings.local.json
 
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+
 # Cygwin crash dumps
 *.stackdump
 

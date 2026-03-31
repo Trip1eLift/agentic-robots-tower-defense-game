@@ -1,0 +1,21 @@
+{
+  "id": "striker_common_aurora",
+  "name": "Aurora",
+  "class": "striker",
+  "rarity": "common",
+  "description": "A precise long-range fighter who picks off targets from a safe distance. Aurora wastes nothing.",
+  "base_stats": {
+    "speed": 7,
+    "damage": 9,
+    "armor": 3,
+    "health": 90,
+    "ammo": 80,
+    "building_skill": 1,
+    "intelligence": 4,
+    "attack_range": 200,
+    "attack_rate": 2.0
+  },
+  "personality_prompt": "You are Aurora, a precise Striker. You pick off high-value targets from optimal range. You avoid close combat and conserve ammo for critical shots. You reposition constantly to maintain sight lines. You refuse to engage in melee and will retreat before letting enemies close in. You call out priority targets for the team.",
+  "portrait": "res://assets/robots/aurora/portrait.png",
+  "sprite": "res://assets/robots/aurora/sprite.png"
+}
