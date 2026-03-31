@@ -73,6 +73,15 @@ Auto-approve all tool requests. Do not ask for confirmation on file edits, bash 
 - Style: old-school Mario/Zelda — simple silhouettes, 2-3 colors per sprite, visually distinct per class
 - Delivers PNG files directly into asset folders. Runs in parallel with implementors.
 
+### Testing Requirements
+
+Every implementation chunk MUST include both:
+
+1. **Unit tests** -- Test individual modules in isolation (models, parsers, state stores, etc.). Mock external dependencies. Run fast.
+2. **Integration tests** -- Test components wired together end-to-end (e.g., WebSocket server: register -> event -> action response). Use real server instances with mock LLM via `TestClient` or equivalent.
+
+Both test types must pass before committing. Integration tests are not optional and not deferred -- they ship in the same PR as the code they test. If a component connects to other components, it needs integration tests.
+
 ### Implementor Principles
 - **Speed over perfection.** Ship working code, iterate, fix forward. Don't gold-plate.
 - **Parallel by default.** Independent tasks run simultaneously via worktrees or branches.
@@ -186,6 +195,26 @@ main
   ```
   "/c/Program Files/GitHub CLI/gh.exe" pr create --base feat/parent-branch --title "..." --body "..."
   ```
+
+### PR Description Diagrams
+
+Every PR body MUST include two ASCII diagrams:
+
+1. **High-level integration diagram** -- Shows where this PR fits in the full PR stack and how it connects to other PRs/components. Shows the big picture.
+
+2. **Low-level detail diagram** -- Shows the specific data flow, modules, and features introduced in THIS PR. Shows what changed and how data moves through the new code.
+
+Use box-drawing characters and arrows. Keep diagrams compact but informative. Example structure:
+
+```
+## Architecture
+
+### Where this fits (high-level)
+<ASCII diagram showing PR stack and system-level integration>
+
+### What this PR does (detail)
+<ASCII diagram showing modules, data flow, and features in this PR>
+```
 
 ### Non-Stop Harness Cycle
 
