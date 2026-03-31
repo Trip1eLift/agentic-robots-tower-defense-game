@@ -68,8 +68,8 @@ class RetreatAction(BaseModel):
 
 class SupportAction(BaseModel):
     action: Literal["heal", "idle"]
-    # Runtime instance ID (1, 2, 3...) or None for idle
-    target_id: Optional[int] = None
+    # Target can be int (enemy ID) or string (robot ID) or None for idle
+    target_id: Optional[Union[int, str]] = None
     reason: Optional[str] = None
 
 

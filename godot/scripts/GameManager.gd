@@ -22,7 +22,7 @@ var _next_enemy_id: int = 1
 var _enemy_id_map: Dictionary = {}
 var _id_enemy_map: Dictionary = {}
 var _stalemate_timer: float = 0.0
-const STALEMATE_TIMEOUT_SEC = 30.0
+const STALEMATE_TIMEOUT_SEC = 60.0
 
 func _process(delta: float) -> void:
 	if _is_wave_active and not _is_spawning:
@@ -33,8 +33,9 @@ func _process(delta: float) -> void:
 			print("GameManager: all robots dead, triggering mission loss")
 			on_base_destroyed()
 			return
-		# Stalemate timeout
-		if _stalemate_timer > STALEMATE_TIMEOUT_SEC:
+		# Stalemate timeout (scaled by game speed)
+		var timeout = STALEMATE_TIMEOUT_SEC / Engine.time_scale
+		if _stalemate_timer > timeout:
 			print("GameManager: stalemate timeout after ", STALEMATE_TIMEOUT_SEC, "s")
 			on_base_destroyed()
 

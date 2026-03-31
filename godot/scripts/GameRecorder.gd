@@ -20,7 +20,11 @@ func start_recording(mission_id: String) -> void:
 	_event_count = 0
 	_summary = {"attacks": 0, "kills": 0, "robot_deaths": 0, "actions": 0, "events_sent": 0, "heals": 0}
 	var path = ProjectSettings.globalize_path(LOG_PATH)
-	_file = FileAccess.open(path, FileAccess.WRITE)
+	_file = FileAccess.open(path, FileAccess.READ_WRITE)
+	if _file:
+		_file.seek_end(0)
+	else:
+		_file = FileAccess.open(path, FileAccess.WRITE)
 	if _file == null:
 		push_error("GameRecorder: cannot open " + path)
 		_recording = false

@@ -102,6 +102,8 @@ Do NOT stop after one run. Keep iterating until the analyzer shows no [BUG] flag
 
 The recording log (`godot/e2e_recording.log`) streams events in real-time. If events stop increasing while the game is running, something is stuck -- investigate immediately. Use `--speed=5` for faster iteration cycles.
 
+**Work in parallel:** Run the game in the background while actively fixing code. Do not wait for a full E2E run to complete before starting fixes. Read the live recording log, identify issues from partial data, fix code, and restart. The game and code fixes happen concurrently.
+
 ### Implementor Principles
 - **Speed over perfection.** Ship working code, iterate, fix forward. Don't gold-plate.
 - **Parallel by default.** Independent tasks run simultaneously via worktrees or branches.
