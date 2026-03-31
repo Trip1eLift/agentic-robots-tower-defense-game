@@ -62,6 +62,7 @@ signal base_health_changed(current: int, maximum: int)
 
 func take_base_damage(amount: int) -> void:
 	_base_health = max(0, _base_health - amount)
+	GameRecorder.log_base_damage(amount, _base_health)
 	base_health_changed.emit(_base_health, _base_max_health)
 	if _base_health == 0:
 		base_destroyed.emit()
