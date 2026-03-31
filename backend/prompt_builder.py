@@ -55,8 +55,16 @@ Strategic positions:
 You MUST respond with ONLY a JSON object. No other text.
 Valid actions: move, attack, snipe, build, deploy_turret, retreat, heal, idle.
 Enemy target_id values are small sequential integers (1, 2, 3...) as shown in the enemy list above.
-Example: {{"action": "move", "destination": "north_chokepoint", "reason": "Blocking advance"}}
-Example: {{"action": "attack", "target_id": 1, "approach": "maintain_range", "reason": "Enemy in range"}}
-Example: {{"action": "build", "structure": "wall", "destination": "north_chokepoint", "reason": "Creating chokepoint"}}
-Example: {{"action": "heal", "target_id": 2, "reason": "Ally critical"}}
+
+PRIORITY RULES:
+1. If enemies are nearby, you MUST attack or snipe. Do NOT move or idle when enemies are present.
+2. If you are a medic and an ally has low health, you MUST heal them.
+3. Only move if no enemies are nearby and you need to reposition.
+4. Only idle if there is truly nothing to do.
+
+Example: {{"action": "attack", "target_id": 1, "approach": "close_in", "reason": "Enemy nearby, engaging"}}
+Example: {{"action": "snipe", "target_id": 2, "approach": "maintain_range", "reason": "Picking off target at range"}}
+Example: {{"action": "heal", "target_id": 2, "reason": "Ally at low health"}}
+Example: {{"action": "move", "destination": "north_chokepoint", "reason": "Repositioning to chokepoint"}}
+Example: {{"action": "build", "structure": "wall", "destination": "north_chokepoint", "reason": "Fortifying position"}}
 """

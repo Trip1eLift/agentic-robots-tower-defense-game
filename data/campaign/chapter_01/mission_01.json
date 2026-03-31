@@ -12,25 +12,25 @@
   "waves": [
     {
       "wave_number": 1,
-      "delay_before_wave_sec": 5.0,
+      "delay_before_wave_sec": 3.0,
       "enemies": [
-        {"type": "zombie", "count": 4, "spawn_point": "spawn_north", "spawn_interval_sec": 2.0}
+        {"type": "zombie", "count": 5, "spawn_point": "spawn_north", "spawn_interval_sec": 1.5}
       ]
     },
     {
       "wave_number": 2,
-      "delay_before_wave_sec": 10.0,
+      "delay_before_wave_sec": 8.0,
       "enemies": [
-        {"type": "zombie", "count": 4, "spawn_point": "spawn_north", "spawn_interval_sec": 1.5},
-        {"type": "zombie", "count": 3, "spawn_point": "spawn_west", "spawn_interval_sec": 1.5}
+        {"type": "zombie", "count": 5, "spawn_point": "spawn_north", "spawn_interval_sec": 1.0},
+        {"type": "zombie", "count": 5, "spawn_point": "spawn_west", "spawn_interval_sec": 1.0}
       ]
     },
     {
       "wave_number": 3,
-      "delay_before_wave_sec": 10.0,
+      "delay_before_wave_sec": 8.0,
       "enemies": [
-        {"type": "zombie", "count": 5, "spawn_point": "spawn_north", "spawn_interval_sec": 1.2},
-        {"type": "zombie", "count": 4, "spawn_point": "spawn_west", "spawn_interval_sec": 1.2}
+        {"type": "zombie", "count": 7, "spawn_point": "spawn_north", "spawn_interval_sec": 0.8},
+        {"type": "zombie", "count": 6, "spawn_point": "spawn_west", "spawn_interval_sec": 0.8}
       ]
     }
   ]

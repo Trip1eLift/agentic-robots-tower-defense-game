@@ -6,6 +6,7 @@ extends Node2D
 func _ready() -> void:
 	var mission_id = CampaignManager.get_current_mission()
 	hud.reset()
+	hud.set_map(map)
 	GameRecorder.start_recording(mission_id)
 	GameManager.setup_mission(mission_id, map)
 	map.base_destroyed.connect(_on_base_destroyed)

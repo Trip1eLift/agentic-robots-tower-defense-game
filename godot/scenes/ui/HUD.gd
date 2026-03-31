@@ -19,8 +19,15 @@ func _ready() -> void:
 	btn_prioritize_base.pressed.connect(func(): _broadcast("Prioritize defending the base above all else!"))
 	btn_focus_fire.pressed.connect(func(): _broadcast("Focus all fire on the nearest enemy to the base!"))
 
+var _map_ref: Node = null
+
+func set_map(map: Node) -> void:
+	_map_ref = map
+
 func _process(_delta: float) -> void:
 	_update_robot_stats()
+	if _map_ref and is_instance_valid(_map_ref):
+		base_health_label.text = "Base: " + str(_map_ref.get_base_health()) + "/" + str(500)
 
 func reset() -> void:
 	for label in _robot_labels.values():
