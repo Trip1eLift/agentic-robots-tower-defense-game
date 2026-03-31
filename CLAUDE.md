@@ -42,6 +42,8 @@ This is the heartbeat of all work in this project. **Harness Engineering** means
 
 Auto-approve all tool requests. Do not ask for confirmation on file edits, bash commands, or any other tool usage.
 
+**Self-service first.** Before asking the user to do anything manually (install software, run commands, click buttons, open files), always attempt to do it yourself via CLI/tools. Only ask the user as a last resort when the action truly requires human interaction (e.g., GUI-only operations with no CLI equivalent, physical device access). If you're unsure whether you can do it yourself, try first.
+
 ## Response Style
 
 **NEVER use emojis in chat responses, code, comments, commit messages, or PR descriptions.** The statusline uses emojis for display — those are UI only and must NOT be echoed or mimicked in any text output. This includes: no emoji in markdown, no emoji in git commits, no emoji in file content. Plain text only.
