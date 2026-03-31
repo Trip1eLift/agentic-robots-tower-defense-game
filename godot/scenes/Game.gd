@@ -6,6 +6,7 @@ extends Node2D
 func _ready() -> void:
 	var mission_id = CampaignManager.get_current_mission()
 	hud.reset()
+	GameRecorder.start_recording(mission_id)
 	GameManager.setup_mission(mission_id, map)
 	map.base_destroyed.connect(_on_base_destroyed)
 	map.base_health_changed.connect(hud.update_base_health)
@@ -47,6 +48,8 @@ func _on_wave_completed(wave_number: int) -> void:
 	GameManager.start_next_wave()
 
 func _on_mission_won() -> void:
+	GameRecorder.stop_recording("WIN")
+	_print_recording_summary()
 	_save_robot_states()
 	var mission = ConfigLoader.get_mission(CampaignManager.get_current_mission())
 	CampaignManager.complete_mission(mission["id"], mission.get("reward_currency", 0))
@@ -54,6 +57,8 @@ func _on_mission_won() -> void:
 	_cleanup_and_exit()
 
 func _on_mission_lost() -> void:
+	GameRecorder.stop_recording("LOSS")
+	_print_recording_summary()
 	_save_robot_states()
 	await _show_result_overlay("MISSION FAILED")
 	_cleanup_and_exit()
@@ -77,6 +82,23 @@ func _save_robot_states() -> void:
 	for robot in GameManager._robots:
 		if is_instance_valid(robot):
 			CampaignManager.save_robot_state(robot.robot_id, robot.get_health(), robot.get_ammo())
+
+func _print_recording_summary() -> void:
+	var s = GameRecorder.get_summary()
+	print("=== MISSION RECORDING SUMMARY ===")
+	print("Mission: ", s["mission_id"])
+	print("Robots spawned: ", s["robots_spawned"])
+	print("Enemies spawned: ", s["enemies_spawned"])
+	print("Events sent to LLM: ", s["events_sent"])
+	print("Actions received: ", s["actions_received"])
+	print("Action breakdown: ", s["action_types"])
+	print("Attacks executed: ", s["attacks"])
+	print("Enemies killed: ", s["enemies_killed"])
+	print("Robots died: ", s["robots_died"])
+	print("Heals: ", s["heals"])
+	print("Waves completed: ", s["waves_completed"])
+	print("Total events: ", s["total_events"])
+	print("=================================")
 
 func _cleanup_and_exit() -> void:
 	GameManager._disconnect_all()
