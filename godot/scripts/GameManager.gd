@@ -21,6 +21,22 @@ var _is_spawning: bool = false
 var _next_enemy_id: int = 1
 var _enemy_id_map: Dictionary = {}
 var _id_enemy_map: Dictionary = {}
+var _stalemate_timer: float = 0.0
+const STALEMATE_TIMEOUT_SEC = 30.0
+
+func _process(delta: float) -> void:
+	if _is_wave_active and not _is_spawning:
+		_stalemate_timer += delta
+		# Check if all robots are dead
+		var alive_robots = get_tree().get_nodes_in_group("robots")
+		if alive_robots.is_empty() and not _enemies.is_empty():
+			print("GameManager: all robots dead, triggering mission loss")
+			on_base_destroyed()
+			return
+		# Stalemate timeout
+		if _stalemate_timer > STALEMATE_TIMEOUT_SEC:
+			print("GameManager: stalemate timeout after ", STALEMATE_TIMEOUT_SEC, "s")
+			on_base_destroyed()
 
 func setup_mission(mission_id: String, map: Node) -> void:
 	_map = map
@@ -113,6 +129,7 @@ func _on_enemy_died(enemy: Node2D) -> void:
 		_id_enemy_map.erase(eid)
 	_enemies.erase(enemy)
 	_kill_count += 1
+	_stalemate_timer = 0.0
 	GameRecorder.log_enemy_killed(eid)
 	kill_count_changed.emit(_kill_count)
 	_notify_robots_of_kill(enemy, eid)

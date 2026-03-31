@@ -2,8 +2,10 @@
 .claude/settings.local.json
 
 # E2E recordings
-e2e_recording.json
+e2e_recording.*
 e2e_output.log
+godot/e2e_recording.*
+godot/campaign_save.json
 
 # Python
 .venv/

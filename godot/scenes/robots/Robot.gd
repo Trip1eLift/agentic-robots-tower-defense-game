@@ -256,14 +256,12 @@ func is_alive() -> bool:
 	return _health > 0 and not _is_dead
 
 func _die() -> void:
+	if _is_dead:
+		return
 	_push_recent_event("ROBOT_DIED")
 	_is_dead = true
 	CampaignManager.mark_robot_dead(robot_id)
 	GameRecorder.log_robot_died(robot_id)
-	# Check if all robots are dead -- trigger mission loss
-	var alive_count = get_tree().get_nodes_in_group("robots").size()
-	if alive_count == 0:
-		GameManager.on_base_destroyed()  # reuse loss handler
 	set_physics_process(false)
 	set_process(false)
 	remove_from_group("robots")
