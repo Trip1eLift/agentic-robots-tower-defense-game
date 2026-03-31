@@ -13,6 +13,7 @@ __pycache__/
 
 # Godot 4+ specific ignores
 .godot/
+godot/data/
 .nomedia
 
 # Godot-specific ignores
@@ -27,3 +28,4 @@ export_credentials.cfg
 .mono/
 data_*/
 mono_crash.*.json
+godot/addons/gut/
