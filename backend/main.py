@@ -5,6 +5,7 @@ import logging
 import os
 from pathlib import Path
 
+from contextlib import asynccontextmanager
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from pydantic import ValidationError
 
@@ -21,7 +22,19 @@ logger = logging.getLogger(__name__)
 
 DATA_DIR = Path(__file__).parent.parent / "data"
 
-app = FastAPI()
+_ollama_semaphore: asyncio.Semaphore
+_ws_send_lock: asyncio.Lock
+
+
+@asynccontextmanager
+async def lifespan(app_instance: FastAPI):
+    global _ollama_semaphore, _ws_send_lock
+    _ollama_semaphore = asyncio.Semaphore(1)
+    _ws_send_lock = asyncio.Lock()
+    yield
+
+
+app = FastAPI(lifespan=lifespan)
 
 config_loader = ConfigLoader(DATA_DIR)
 robot_state_store = RobotStateStore()
@@ -30,13 +43,6 @@ prompt_builder = PromptBuilder()
 action_parser = ActionParser()
 USE_MOCK_LLM = os.environ.get("USE_MOCK_LLM", "false").lower() == "true"
 ollama_client = MockLLM() if USE_MOCK_LLM else OllamaClient()
-
-
-@app.on_event("startup")
-async def startup():
-    global _ollama_semaphore, _ws_send_lock
-    _ollama_semaphore = asyncio.Semaphore(1)
-    _ws_send_lock = asyncio.Lock()
 
 
 async def process_robot_events(robot_id: str, websocket: WebSocket) -> None:
