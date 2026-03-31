@@ -58,25 +58,23 @@ const LORE_LINES = [
 	"[center][b]Tell them what to do.[/b][/center]",
 ]
 
-var _current_line: int = 0
 var _full_text: String = ""
-var _char_index: int = 0
 var _typing: bool = true
 
 func _ready() -> void:
-	lore_label.text = ""
 	lore_label.bbcode_enabled = true
+	_full_text = "\n".join(LORE_LINES)
+	lore_label.text = _full_text
+	lore_label.visible_characters = 0
 	skip_label.text = "Press any key to skip..."
 	skip_label.modulate.a = 0.5
 	fade_timer.wait_time = 0.03
 	fade_timer.timeout.connect(_on_type_tick)
-	_full_text = "\n".join(LORE_LINES)
 	fade_timer.start()
 
 func _on_type_tick() -> void:
-	if _char_index < _full_text.length():
-		_char_index += 1
-		lore_label.text = _full_text.substr(0, _char_index)
+	if lore_label.visible_characters < lore_label.get_total_character_count():
+		lore_label.visible_characters += 1
 	else:
 		_typing = false
 		fade_timer.stop()
@@ -91,8 +89,7 @@ func _input(event: InputEvent) -> void:
 		if _typing:
 			_typing = false
 			fade_timer.stop()
-			_char_index = _full_text.length()
-			lore_label.text = _full_text
+			lore_label.visible_characters = -1
 			skip_label.text = "Press any key to start a new campaign..."
 			skip_label.modulate.a = 1.0
 		else:

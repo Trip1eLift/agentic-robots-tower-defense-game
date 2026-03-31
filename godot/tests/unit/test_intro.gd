@@ -39,17 +39,15 @@ func test_lore_ends_with_call_to_action():
 func test_intro_finish_resets_campaign():
 	CampaignManager.mark_robot_dead("vanguard_common_rex")
 	CampaignManager.complete_mission("ch01_mission_01", 300)
-	# Simulate finishing the intro
 	_intro._typing = false
 	_intro.fade_timer.stop()
-	# Trigger the "continue" path
 	CampaignManager.reset_campaign()
 	assert_false(CampaignManager.is_robot_dead("vanguard_common_rex"))
 	assert_eq(CampaignManager.get_alive_robots().size(), 4)
 	assert_eq(CampaignManager.get_currency(), 0)
 
-func test_typewriter_starts_empty():
-	assert_eq(_intro.lore_label.text, "", "Label should start empty")
+func test_typewriter_starts_with_zero_visible():
+	assert_eq(_intro.lore_label.visible_characters, 0, "Should start with 0 visible characters")
 
 func test_typing_flag_starts_true():
 	assert_true(_intro._typing, "Should start in typing mode")
@@ -58,8 +56,7 @@ func test_intro_emits_finished_signal():
 	watch_signals(_intro)
 	_intro._typing = false
 	_intro.fade_timer.stop()
-	_intro._char_index = _intro._full_text.length()
-	_intro.lore_label.text = _intro._full_text
+	_intro.lore_label.visible_characters = -1
 	_intro.intro_finished.emit()
 	assert_signal_emitted(_intro, "intro_finished")
 
