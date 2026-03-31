@@ -17,6 +17,11 @@ var _strategic_positions: Dictionary = {}
 func _ready() -> void:
 	_map_config = ConfigLoader.get_map(map_id)
 	_load_strategic_positions()
+	# Ensure navigation is baked
+	var nav_region = $NavigationRegion2D
+	if nav_region and nav_region.navigation_polygon:
+		nav_region.bake_navigation_polygon()
+		print("Map: navigation baked")
 
 func _load_strategic_positions() -> void:
 	for pos_data in _map_config.get("strategic_positions", []):
