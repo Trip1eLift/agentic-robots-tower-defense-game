@@ -12,21 +12,158 @@ A 2D tower defense game where you command AI-driven combat units through natural
 
 ## Architecture
 
+### System Overview
+
 ```
-+--------------------------+          WebSocket           +-------------------------+
-|    Godot 4 Frontend      | <-------------------------> |    Python Backend        |
-|                          |     ws://localhost:8765/ws   |                         |
-|  Robots, Enemies, Map    |                              |  FastAPI + Ollama LLM   |
-|  HUD, Campaign, UI       |  robot events (perception)   |  Prompt Builder         |
-|  Navigation, Physics     |  ----------------------->    |  Action Parser          |
-|  GameRecorder            |  robot actions (JSON)         |  Event Queue            |
-|                          |  <-----------------------    |  Robot State Store      |
-+--------------------------+                              +-------------------------+
-         |                                                          |
-         v                                                          v
-   godot/data/ (JSON)                                    data/ (shared config)
-   campaign_save.json                                    robots, enemies, maps,
-                                                         missions
+                    +--------+
+                    | PLAYER |
+                    +---+----+
+                        | writes orders
+                        v
++-----------------------------------------------+
+|            GODOT 4 FRONTEND (GDScript)        |
+|                                               |
+|  Intro -> Briefing -> Game (Map+ARIA+Enemies) |
+|                                               |
+|  Singletons: ConfigLoader, GameManager,       |
+|    CampaignManager, WebSocketClient,          |
+|    GameRecorder, AutoPlay                     |
++-------------------+--+------------------------+
+                    |  ^
+     events (JSON)  |  |  actions (JSON)
+     enemy spotted  |  |  move, attack,
+     taking damage  |  |  heal, retreat,
+     ally wounded   |  |  build
+                    v  |
+          +---------+--+---------+
+          |  WebSocket :8765/ws  |
+          +---------+--+---------+
+                    |  ^
+                    v  |
++-------------------+--+------------------------+
+|          PYTHON BACKEND (FastAPI)             |
+|                                               |
+|  EventQueue -> PromptBuilder -> OllamaClient  |
+|  (coalesce)   (personality     (dolphin-      |
+|                + orders         mistral 7B    |
+|                + context)       or MockLLM)   |
+|                            -> ActionParser    |
+|                               (JSON->Action)  |
+|                                               |
+|  RobotStateStore, ConfigLoader                |
++-----------------------------------------------+
+          |                     |
+          v                     v
+  campaign_save.json     data/ (shared JSON)
+  (HP, ammo, dead        robots, enemies,
+   units, currency)      maps, missions
+```
+
+### Decision Cycle
+
+Each ARIA unit repeats this loop during combat:
+
+```
+ARIA Unit (Godot)            Backend (Python)           Ollama
+==============               ===============            ======
+
+1. Detect enemy via
+   PerceptionArea2D
+        |
+2. Build context:
+   enemies, allies,
+   HP, ammo, position
+        |
+3. Send event ---------> 4. Enqueue + coalesce
+   via WebSocket             (drop stale events)
+                                  |
+                          5. Build prompt:
+                             personality +
+                             player orders +
+                             priority rules +
+                             battlefield context
+                                  |
+                          6. Call LLM ---------> 7. Generate JSON
+                             (semaphore: 1)         {"action":"attack",
+                             (30s timeout)           "target_id": 3,
+                             (format: json)          "reason":"..."}
+                                  |                       |
+                          8. Parse action <---------------+
+                             JSON -> typed model
+                             (idle on failure)
+                                  |
+9. Execute action <---------- Send via WebSocket
+   navigate + attack
+   show speech bubble
+        |
+10. Auto-attack until
+    next LLM response
+    (no idle gap)
+```
+
+### Game Flow
+
+```
+Lore Intro (skip any key, resets campaign)
+     |
+     v
+Pre-Combat Briefing
+  - write orders per ARIA unit
+  - view strategic positions + stats
+  - char limit = intelligence x 100
+     |
+     v
+Mission (waves of enemies)
+  - GameManager spawns waves
+  - ARIA units fight autonomously
+  - HUD shows HP bars, kills, log
+  - Commander buttons mid-combat
+     |
+  +--+--+
+  |     |
+  v     v
+ WIN   LOSE
+  |     |
+  v     v
+CampaignManager saves state
+  - dead units stay dead
+  - HP and ammo carry over
+  - currency awarded on win
+     |
+     v
+Next mission or game over
+```
+
+### Components
+
+```
+GODOT SINGLETONS              PYTHON MODULES
+================              ==============
+
+ConfigLoader.gd               main.py
+  JSON data loader               FastAPI + WS endpoint
+
+WebSocketClient.gd            event_queue.py
+  WS conn, auto-reconnect       per-robot queue, coalescing
+
+GameManager.gd                prompt_builder.py
+  waves, kills, win/loss         personality + orders + context
+
+CampaignManager.gd            ollama_client.py
+  save/load, permadeath          async LLM, semaphore, timeout
+
+GameRecorder.gd               mock_llm.py
+  E2E event logging              rule-based, no Ollama needed
+
+AutoPlay.gd                   action_parser.py
+  headless testing mode          JSON -> typed action models
+
+                               robot_state.py
+                                 HP, ammo, position tracking
+
+                               models.py
+                                 Pydantic v2, 12 event types,
+                                 5 action types
 ```
 
 ## Prerequisites
