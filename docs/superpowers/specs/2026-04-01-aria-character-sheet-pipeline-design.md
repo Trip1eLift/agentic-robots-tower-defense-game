@@ -134,8 +134,8 @@ Swap character-specific tags:
 ### Hana (Architect) -- Apply After Aurora Validated
 
 Swap character-specific tags:
-- `dark blackish brown hair in high ponytail, bangs across forehead`
-- `cobalt blue engineer jumpsuit, rolled up sleeves`
+- `long silver white hair in high ponytail, bangs across forehead`
+- `black engineer jumpsuit, rolled up sleeves`
 - `amber goggles pushed up on forehead`
 - `(oversized mechanical wrench on right shoulder:1.3)`
 - `pistol in left hip holster`
