@@ -27,16 +27,9 @@ const STALEMATE_TIMEOUT_SEC = 30.0
 func _process(delta: float) -> void:
 	if _is_wave_active and not _is_spawning:
 		_stalemate_timer += delta
-		# Check if all robots are dead
-		var alive_robots = get_tree().get_nodes_in_group("robots")
-		if alive_robots.is_empty() and not _enemies.is_empty():
-			print("GameManager: all robots dead, triggering mission loss")
-			on_base_destroyed()
-			return
-		# Stalemate timeout (scaled by game speed)
-		var timeout = STALEMATE_TIMEOUT_SEC / Engine.time_scale
-		if _stalemate_timer > timeout:
-			print("GameManager: stalemate timeout after ", STALEMATE_TIMEOUT_SEC, "s")
+		# Stalemate timeout -- use real seconds (not scaled)
+		if _stalemate_timer > STALEMATE_TIMEOUT_SEC:
+			print("GameManager: stalemate timeout after ", STALEMATE_TIMEOUT_SEC, "s real time")
 			on_base_destroyed()
 
 func setup_mission(mission_id: String, map: Node) -> void:
