@@ -168,23 +168,21 @@ AutoPlay.gd                   action_parser.py
 
 ## Prerequisites
 
-- **Godot 4.6+** -- Download from [godotengine.org](https://godotengine.org/download)
-- **Python 3.11+**
-- **Ollama** -- Download from [ollama.com](https://ollama.com/download)
-  - Pull the model: `ollama pull dolphin-mistral`
-  - Not needed if running with mock LLM
+- **Python 3.11+** -- [python.org/downloads](https://www.python.org/downloads/)
+- **Godot 4.6+** -- [godotengine.org/download](https://godotengine.org/download)
+- **Ollama** (optional) -- [ollama.com/download](https://ollama.com/download)
 
 ## Setup
 
+### 1. Clone and install Python backend
+
 ```bash
-# Clone the repo
 git clone https://github.com/Trip1eLift/agentic-robots-tower-defense-game.git
 cd agentic-robots-tower-defense-game
 
-# Create Python virtual environment
+# Create and activate virtual environment
 python -m venv .venv
 
-# Activate venv
 # Linux/macOS:
 source .venv/bin/activate
 # Windows (Git Bash / Cygwin):
@@ -192,15 +190,44 @@ source .venv/Scripts/activate
 # Windows (PowerShell):
 .venv\Scripts\Activate.ps1
 
-# Install Python dependencies
+# Install dependencies
 pip install -r backend/requirements.txt
-
-# Copy shared data into Godot project
-cp -r data/ godot/data/
-
-# Install GUT plugin for Godot tests (optional)
-# Open godot/ in Godot Editor -> AssetLib -> search "GUT" -> install
 ```
+
+### 2. Set up Godot
+
+1. Download **Godot 4.6+** from [godotengine.org/download](https://godotengine.org/download)
+   - Download the **Standard** version (not .NET)
+   - Extract the executable to a location you'll remember (e.g., `/opt/godot/`, `C:\Godot\`, etc.)
+2. Copy shared data into the Godot project:
+   ```bash
+   cp -r data/ godot/data/
+   ```
+3. Open the Godot editor:
+   ```bash
+   /path/to/godot --path godot/
+   ```
+4. **(Optional)** Install the GUT plugin for running Godot tests:
+   - In the Godot editor: AssetLib tab -> search "GUT" -> install
+
+### 3. Set up Ollama (for real LLM -- optional)
+
+The game can run with a mock LLM that requires no external setup. If you want the full experience with a real local LLM:
+
+1. Download and install Ollama from [ollama.com/download](https://ollama.com/download)
+2. Pull the model:
+   ```bash
+   ollama pull dolphin-mistral
+   ```
+3. Verify it's running:
+   ```bash
+   ollama list
+   # Should show dolphin-mistral in the list
+   ```
+
+Ollama runs as a background service automatically after installation. The backend connects to it on the default port (11434).
+
+> **Skip this step** if you just want to test the game quickly -- use `bash start.sh mock` or set `USE_MOCK_LLM=true` to run with the rule-based mock LLM instead.
 
 ## Running the Game
 
