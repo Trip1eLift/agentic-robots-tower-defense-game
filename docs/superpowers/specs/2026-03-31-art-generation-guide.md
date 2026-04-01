@@ -215,10 +215,10 @@ Generate at **512x288** (16:9 within SD 1.5 range), then upscale to **1920x1080*
 
 | # | Filename | Gen Size | Final Size | Description |
 |---|----------|----------|-----------|-------------|
-| 3 | `rex_portrait.png` | 512x768 | 512x768 | Upper body. Shield on left edge, sword handle at bottom right. Orange side lighting. Ruins background blurred. Reddish-pink scarf catches light. |
-| 4 | `aurora_portrait.png` | 512x768 | 512x768 | Upper body. Rifle barrel past top of frame. Blue backlighting. Visor glowing. Ruins perch background blurred. Golden hair flowing. |
-| 5 | `lily_portrait.png` | 512x768 | 512x768 | Upper body. Healing glow from left hand lighting face green. Pistol at side. Medical satchel strap. Medical bay background blurred. Warm smile. |
-| 6 | `hana_portrait.png` | 512x768 | 512x768 | Upper body. Wrench on right shoulder. Goggles reflecting light. Pistol holster visible. Workshop/sparks background blurred. Confident grin. |
+| 3 | `rex_portrait.png` | 512x768 | 512x768 | Upper body. Shield on left edge, sword handle at bottom right. Reddish-pink scarf. Duskwall gate background (shared). |
+| 4 | `aurora_portrait.png` | 512x768 | 512x768 | Upper body. Rifle barrel past top of frame. Visor glowing. Golden hair flowing. Duskwall gate background (shared). |
+| 5 | `lily_portrait.png` | 512x768 | 512x768 | Upper body. Healing glow from left hand. Pistol at side. Medical satchel strap. Duskwall gate background (shared). |
+| 6 | `hana_portrait.png` | 512x768 | 512x768 | Upper body. Wrench on right shoulder. Goggles. Pistol holster visible. Duskwall gate background (shared). |
 
 ### In-Game Sprites -- Alive
 
@@ -313,6 +313,21 @@ feminine android, white silver chassis at joints,
 small glowing cyan diamond on forehead,
 cyan glowing eyes, pale luminous skin,
 subtle panel lines on skin,
+```
+
+### Tag Block E: Duskwall Gate Background (ALL portraits)
+
+All 4 ARIA portraits share this background to create visual cohesion. They are standing at the Duskwall gate -- the last door between civilization and the wasteland. This replaces per-character backgrounds.
+
+```
+duskwall citadel gate background,
+massive reinforced metal gate partially open behind her,
+thick fortified concrete and steel wall stretching to both sides,
+warm orange flood lights mounted on wall,
+irradiated orange sky with dust haze above,
+desolate wasteland visible through gate opening,
+dark atmospheric ground fog,
+background slightly blurred depth of field,
 ```
 
 ### Tag Block D: Negative Prompt (ALL images)
@@ -438,8 +453,15 @@ broad sword handle visible at bottom right,
 tattered reddish pink scarf around neck trailing behind,
 strong determined protective expression,
 dramatic warm orange side lighting from left,
-post-apocalyptic ruined city background blurred,
 looking at viewer,
+duskwall citadel gate background,
+massive reinforced metal gate partially open behind her,
+thick fortified concrete and steel wall stretching to both sides,
+warm orange flood lights mounted on wall,
+irradiated orange sky with dust haze above,
+desolate wasteland visible through gate opening,
+dark atmospheric ground fog,
+background slightly blurred depth of field,
 
 Negative:
 bad anatomy, bad hands, missing fingers, extra fingers, extra digit, fewer digits, blurry, low quality, worst quality, normal quality, watermark, text, signature, username, artist name, cropped, out of frame, deformed, disfigured, ugly, duplicate, morbid, mutilated, poorly drawn face, poorly drawn hands, extra arms, extra legs, fused fingers, too many fingers, long neck, multiple characters, 2girls, multiple views, split screen, male, masculine, boy, man, jpeg artifacts, error, gun, firearm, rifle, pistol
@@ -465,8 +487,15 @@ dark bodysuit underneath,
 oversized sniper rifle barrel extending past top of frame,
 cold focused calculating expression,
 cool blue backlighting,
-elevated ruins sniper perch background blurred,
 looking at viewer slightly to right,
+duskwall citadel gate background,
+massive reinforced metal gate partially open behind her,
+thick fortified concrete and steel wall stretching to both sides,
+warm orange flood lights mounted on wall,
+irradiated orange sky with dust haze above,
+desolate wasteland visible through gate opening,
+dark atmospheric ground fog,
+background slightly blurred depth of field,
 
 Negative:
 bad anatomy, bad hands, missing fingers, extra fingers, extra digit, fewer digits, blurry, low quality, worst quality, normal quality, watermark, text, signature, username, artist name, cropped, out of frame, deformed, disfigured, ugly, duplicate, morbid, mutilated, poorly drawn face, poorly drawn hands, extra arms, extra legs, fused fingers, too many fingers, long neck, multiple characters, 2girls, multiple views, split screen, male, masculine, boy, man, jpeg artifacts, error
@@ -494,8 +523,15 @@ soft green healing glow from left hand illuminating face,
 green light particles floating,
 gentle compassionate expression, warm smile,
 beauty mark below left eye,
-medical bay background blurred,
 looking at viewer,
+duskwall citadel gate background,
+massive reinforced metal gate partially open behind her,
+thick fortified concrete and steel wall stretching to both sides,
+warm orange flood lights mounted on wall,
+irradiated orange sky with dust haze above,
+desolate wasteland visible through gate opening,
+dark atmospheric ground fog,
+background slightly blurred depth of field,
 
 Negative:
 bad anatomy, bad hands, missing fingers, extra fingers, extra digit, fewer digits, blurry, low quality, worst quality, normal quality, watermark, text, signature, username, artist name, cropped, out of frame, deformed, disfigured, ugly, duplicate, morbid, mutilated, poorly drawn face, poorly drawn hands, extra arms, extra legs, fused fingers, too many fingers, long neck, multiple characters, 2girls, multiple views, split screen, male, masculine, boy, man, jpeg artifacts, error
@@ -522,8 +558,15 @@ pistol in holster on left hip,
 loaded brown leather tool belt,
 confident energetic grin showing teeth,
 grease smudge on right cheek,
-workshop forge background with sparks blurred,
 looking at viewer,
+duskwall citadel gate background,
+massive reinforced metal gate partially open behind her,
+thick fortified concrete and steel wall stretching to both sides,
+warm orange flood lights mounted on wall,
+irradiated orange sky with dust haze above,
+desolate wasteland visible through gate opening,
+dark atmospheric ground fog,
+background slightly blurred depth of field,
 
 Negative:
 bad anatomy, bad hands, missing fingers, extra fingers, extra digit, fewer digits, blurry, low quality, worst quality, normal quality, watermark, text, signature, username, artist name, cropped, out of frame, deformed, disfigured, ugly, duplicate, morbid, mutilated, poorly drawn face, poorly drawn hands, extra arms, extra legs, fused fingers, too many fingers, long neck, multiple characters, 2girls, multiple views, split screen, male, masculine, boy, man, jpeg artifacts, error
