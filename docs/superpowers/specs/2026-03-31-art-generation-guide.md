@@ -293,21 +293,36 @@ Generate at **256x256**, downscale to **64x64** (4x clean ratio).
 
 ## 5. Style Consistency Tags
 
+### Art Style: Genshin Impact
+
+ALL art in this project follows the **Genshin Impact visual style**. This means:
+- **Color-coded character identity:** Each character is defined by a dominant color (hair = theme)
+- **Clean, vibrant linework:** Smooth outlines, saturated colors, no gritty textures
+- **Fantasy-military hybrid aesthetic:** Elegant armor/gear with fantastical elements (glowing accents, flowing fabrics)
+- **Expressive but grounded faces:** Large eyes but not extreme chibi proportions in portraits. Detailed, emotive.
+- **Cel-shaded lighting feel:** Clear light/shadow division, not painterly gradients
+- **Elemental glow effects:** Glowing accents on weapons, eyes, abilities (our equivalent: cyan Anima glow)
+
+The tag `genshin impact style` is added to every prompt. This is the single most important tag for visual consistency.
+
 ### Tag Block A: Realistic Anime (portraits, backgrounds)
 
 ```
 masterpiece, best quality, ultra detailed,
-anime style, official art, league of legends splash art style,
+genshin impact style, anime game CG, official game art,
 cinematic lighting, dramatic atmosphere, depth of field,
 highly detailed face, beautiful detailed eyes,
+cel shaded, clean linework, vibrant colors,
 ```
 
 ### Tag Block B: Chibi Sprites (all in-game sprites, enemy, structures)
 
 ```
 masterpiece, best quality, chibi, game sprite,
+genshin impact style, anime game CG,
 cute, super deformed, big head, big eyes, small body,
 full body, single character,
+cel shaded, clean linework, vibrant colors,
 game asset,
 ```
 
@@ -402,8 +417,9 @@ jpeg artifacts, error,
 ```
 Prompt:
 masterpiece, best quality, ultra detailed,
-anime style, official art, cinematic lighting,
-dramatic atmosphere, depth of field,
+genshin impact style, anime game CG, official game art,
+cinematic lighting, dramatic atmosphere, depth of field,
+cel shaded, clean linework, vibrant colors,
 post-apocalyptic landscape, wide panoramic view,
 ruined civilization, crumbling skyscrapers in silhouette,
 irradiated orange sky, red sun through dust and haze,
@@ -422,8 +438,9 @@ bad anatomy, bad hands, missing fingers, extra fingers, extra digit, fewer digit
 ```
 Prompt:
 masterpiece, best quality, ultra detailed,
-anime style, official art, cinematic lighting,
-dramatic atmosphere, depth of field,
+genshin impact style, anime game CG, official game art,
+cinematic lighting, dramatic atmosphere, depth of field,
+cel shaded, clean linework, vibrant colors,
 zombie horde approaching from distance,
 dozens of dark silhouettes with glowing red eyes,
 green toxic fog rolling across ground,
@@ -444,9 +461,10 @@ bad anatomy, bad hands, missing fingers, extra fingers, extra digit, fewer digit
 ```
 Prompt:
 masterpiece, best quality, ultra detailed,
-anime style, official art, league of legends splash art style,
+genshin impact style, anime game CG, official game art,
 cinematic lighting, dramatic atmosphere, depth of field,
 highly detailed face, beautiful detailed eyes,
+cel shaded, clean linework, vibrant colors,
 feminine android, white silver chassis at joints,
 small glowing cyan diamond on forehead,
 cyan glowing eyes, pale luminous skin,
@@ -480,9 +498,10 @@ bad anatomy, bad hands, missing fingers, extra fingers, extra digit, fewer digit
 ```
 Prompt:
 masterpiece, best quality, ultra detailed,
-anime style, official art, league of legends splash art style,
+genshin impact style, anime game CG, official game art,
 cinematic lighting, dramatic atmosphere, depth of field,
 highly detailed face, beautiful detailed eyes,
+cel shaded, clean linework, vibrant colors,
 feminine android, white silver chassis at joints,
 small glowing cyan diamond on forehead,
 cyan glowing eyes, pale luminous skin,
@@ -514,9 +533,10 @@ bad anatomy, bad hands, missing fingers, extra fingers, extra digit, fewer digit
 ```
 Prompt:
 masterpiece, best quality, ultra detailed,
-anime style, official art, league of legends splash art style,
+genshin impact style, anime game CG, official game art,
 cinematic lighting, dramatic atmosphere, depth of field,
 highly detailed face, beautiful detailed eyes,
+cel shaded, clean linework, vibrant colors,
 feminine android, white silver chassis at joints,
 small glowing cyan diamond on forehead,
 cyan glowing eyes, pale luminous skin,
@@ -550,9 +570,10 @@ bad anatomy, bad hands, missing fingers, extra fingers, extra digit, fewer digit
 ```
 Prompt:
 masterpiece, best quality, ultra detailed,
-anime style, official art, league of legends splash art style,
+genshin impact style, anime game CG, official game art,
 cinematic lighting, dramatic atmosphere, depth of field,
 highly detailed face, beautiful detailed eyes,
+cel shaded, clean linework, vibrant colors,
 feminine android, white silver chassis at joints,
 small glowing cyan diamond on forehead,
 cyan glowing eyes, pale luminous skin,
@@ -587,8 +608,10 @@ bad anatomy, bad hands, missing fingers, extra fingers, extra digit, fewer digit
 ```
 Prompt:
 masterpiece, best quality, chibi, game sprite,
+genshin impact style, anime game CG,
 cute, super deformed, big head, big eyes, small body,
 full body, single character, game asset,
+cel shaded, clean linework, vibrant colors,
 solid bright green background,
 feminine android, white silver chassis at joints,
 small glowing cyan diamond on forehead,
@@ -610,8 +633,10 @@ bad anatomy, bad hands, missing fingers, extra fingers, extra digit, fewer digit
 ```
 Prompt:
 masterpiece, best quality, chibi, game sprite,
+genshin impact style, anime game CG,
 cute, super deformed, big head, big eyes, small body,
 full body, single character, game asset,
+cel shaded, clean linework, vibrant colors,
 solid bright green background,
 feminine android, white silver chassis at joints,
 small glowing cyan diamond on forehead,
@@ -633,8 +658,10 @@ bad anatomy, bad hands, missing fingers, extra fingers, extra digit, fewer digit
 ```
 Prompt:
 masterpiece, best quality, chibi, game sprite,
+genshin impact style, anime game CG,
 cute, super deformed, big head, big eyes, small body,
 full body, single character, game asset,
+cel shaded, clean linework, vibrant colors,
 solid bright green background,
 feminine android, white silver chassis at joints,
 small glowing cyan diamond on forehead,
@@ -656,8 +683,10 @@ bad anatomy, bad hands, missing fingers, extra fingers, extra digit, fewer digit
 ```
 Prompt:
 masterpiece, best quality, chibi, game sprite,
+genshin impact style, anime game CG,
 cute, super deformed, big head, big eyes, small body,
 full body, single character, game asset,
+cel shaded, clean linework, vibrant colors,
 solid bright green background,
 feminine android, white silver chassis at joints,
 small glowing cyan diamond on forehead,
@@ -684,8 +713,10 @@ All dead sprites use the SAME hair color as alive versions. Desaturation is appl
 ```
 Prompt:
 masterpiece, best quality, chibi, game sprite,
+genshin impact style, anime game CG,
 cute, super deformed, big head, big eyes, small body,
 full body, single character, game asset,
+cel shaded, clean linework, vibrant colors,
 solid bright green background,
 feminine android, white silver chassis at joints,
 dark cracked diamond on forehead,
@@ -707,8 +738,10 @@ bad anatomy, bad hands, missing fingers, extra fingers, extra digit, fewer digit
 ```
 Prompt:
 masterpiece, best quality, chibi, game sprite,
+genshin impact style, anime game CG,
 cute, super deformed, big head, big eyes, small body,
 full body, single character, game asset,
+cel shaded, clean linework, vibrant colors,
 solid bright green background,
 feminine android, white silver chassis at joints,
 dark cracked diamond on forehead,
@@ -729,8 +762,10 @@ bad anatomy, bad hands, missing fingers, extra fingers, extra digit, fewer digit
 ```
 Prompt:
 masterpiece, best quality, chibi, game sprite,
+genshin impact style, anime game CG,
 cute, super deformed, big head, big eyes, small body,
 full body, single character, game asset,
+cel shaded, clean linework, vibrant colors,
 solid bright green background,
 feminine android, white silver chassis at joints,
 dark cracked diamond on forehead,
@@ -751,8 +786,10 @@ bad anatomy, bad hands, missing fingers, extra fingers, extra digit, fewer digit
 ```
 Prompt:
 masterpiece, best quality, chibi, game sprite,
+genshin impact style, anime game CG,
 cute, super deformed, big head, big eyes, small body,
 full body, single character, game asset,
+cel shaded, clean linework, vibrant colors,
 solid bright green background,
 feminine android, white silver chassis at joints,
 dark cracked diamond on forehead,
@@ -775,8 +812,10 @@ bad anatomy, bad hands, missing fingers, extra fingers, extra digit, fewer digit
 ```
 Prompt:
 masterpiece, best quality, chibi, game sprite,
+genshin impact style, anime game CG,
 cute, super deformed, big head, big eyes, small body,
 full body, single character, game asset,
+cel shaded, clean linework, vibrant colors,
 solid bright green background,
 anime style zombie mutant,
 pale lavender gray skin, stylized,
@@ -798,7 +837,9 @@ bad anatomy, bad hands, missing fingers, extra fingers, extra digit, fewer digit
 ```
 Prompt:
 masterpiece, best quality, game sprite,
-game asset, solid bright green background,
+genshin impact style, anime game CG,
+game asset, cel shaded, clean linework,
+solid bright green background,
 simple clean background,
 fortified military bunker building,
 metal plating walls, reinforced riveted panels,
@@ -844,49 +885,50 @@ bad anatomy, bad hands, missing fingers, extra fingers, extra digit, fewer digit
 
 ### 7.6 Map Tiles
 
-All tiles: 256x256, 20 steps, CFG 7.0. Negative for all tiles: "people, characters, anime girl, text, watermark, blurry, low quality"
+All tiles: 256x256, 20 steps, CFG 7.0. All tile prompts include "genshin impact style, anime game CG" for consistency. Negative for all tiles: "people, characters, anime girl, text, watermark, blurry, low quality, realistic, photo"
 
 **tile_dirt.png** (Seed 8001)
 ```
-seamless tileable texture, cracked dry brown earth ground,
+genshin impact style, anime game CG, seamless tileable texture, cracked dry brown earth ground,
 post apocalyptic wasteland dirt, game texture, top down view
 ```
 
 **tile_dead_grass.png** (Seed 8002)
 ```
-seamless tileable texture, dry brown ground with sparse yellowed dead grass,
+genshin impact style, anime game CG, seamless tileable texture, dry brown ground with sparse yellowed dead grass,
 post apocalyptic wasteland, game texture, top down view
 ```
 
 **tile_rubble.png** (Seed 8003)
 ```
-seamless tileable texture, brown ground with scattered concrete rubble and small rocks,
+genshin impact style, anime game CG, seamless tileable texture, brown ground with scattered concrete rubble and small rocks,
 post apocalyptic debris, game texture, top down view
 ```
 
 **tile_road.png** (Seed 8004)
 ```
-seamless tileable texture, cracked dark gray asphalt road surface,
+genshin impact style, anime game CG, seamless tileable texture, cracked dark gray asphalt road surface,
 faded road markings, post apocalyptic, game texture, top down view
 ```
 
 **tile_rust.png** (Seed 8005)
 ```
-seamless tileable texture, brown ground with embedded rusted metal scraps,
+genshin impact style, anime game CG, seamless tileable texture, brown ground with embedded rusted metal scraps,
 post apocalyptic junkyard, game texture, top down view
 ```
 
 **tile_bridge.png** (Seed 8006)
 ```
-seamless tileable texture, weathered wooden planks bridge surface,
+genshin impact style, anime game CG, seamless tileable texture, weathered wooden planks bridge surface,
 rope and nail details, brown wood, game texture, top down view
 ```
 
 **tile_dead_tree.png** (Seed 8007)
 ```
 Prompt:
+genshin impact style, anime game CG,
 dead leafless tree, bare branches, dark brown trunk,
-post apocalyptic, game asset,
+post apocalyptic, game asset, cel shaded, clean linework,
 solid bright green background,
 side view, three quarter angle,
 
