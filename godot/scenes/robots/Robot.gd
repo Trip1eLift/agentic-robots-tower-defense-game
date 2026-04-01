@@ -40,6 +40,7 @@ func setup(config: Dictionary, map: Node) -> void:
 	_ammo = stats["ammo"]
 	_speed = stats["speed"] * 20.0
 	robot_id = config["id"]
+	_load_class_sprite(config.get("class", ""))
 	add_to_group("robots")
 	speech_label.visible = false
 	speech_timer.wait_time = 3.0
@@ -56,11 +57,33 @@ func setup(config: Dictionary, map: Node) -> void:
 	_setup_health_bar()
 	_execute_default_spawn_action()
 
+func _load_class_sprite(robot_class: String) -> void:
+	var sprite_map = {
+		"vanguard": "res://assets/aria/rex_sprite.png",
+		"architect": "res://assets/aria/hana_sprite.png",
+		"striker": "res://assets/aria/aurora_sprite.png",
+		"medic": "res://assets/aria/lily_sprite.png",
+	}
+	var path = sprite_map.get(robot_class, "")
+	if path and ResourceLoader.exists(path):
+		$Sprite2D.texture = load(path)
+
+func _load_dead_sprite(robot_class: String) -> void:
+	var dead_map = {
+		"vanguard": "res://assets/aria/rex_dead.png",
+		"architect": "res://assets/aria/hana_dead.png",
+		"striker": "res://assets/aria/aurora_dead.png",
+		"medic": "res://assets/aria/lily_dead.png",
+	}
+	var path = dead_map.get(robot_class, "")
+	if path and ResourceLoader.exists(path):
+		$Sprite2D.texture = load(path)
+
 func _setup_health_bar() -> void:
 	_name_label_node = Label.new()
 	_name_label_node.text = _config.get("name", robot_id)
 	_name_label_node.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_name_label_node.position = Vector2(-30, -35)
+	_name_label_node.position = Vector2(-40, -75)
 	_name_label_node.add_theme_font_size_override("font_size", 10)
 	add_child(_name_label_node)
 	_health_bar = ProgressBar.new()
@@ -68,7 +91,7 @@ func _setup_health_bar() -> void:
 	_health_bar.value = _health
 	_health_bar.custom_minimum_size = Vector2(50, 3)
 	_health_bar.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
-	_health_bar.position = Vector2(-25, -22)
+	_health_bar.position = Vector2(-30, -62)
 	_health_bar.show_percentage = false
 	# Force the height by overriding theme styles
 	var bg = StyleBoxFlat.new()
@@ -272,7 +295,9 @@ func _die() -> void:
 	# Disconnect from backend so no more actions arrive for this robot
 	if WebSocketClient.action_received.is_connected(_on_action_received):
 		WebSocketClient.action_received.disconnect(_on_action_received)
-	hide()
+	# Swap to dead sprite instead of hiding
+	_load_dead_sprite(_config.get("class", ""))
+	modulate = Color(0.7, 0.7, 0.7, 0.8)
 
 func _on_body_entered_perception(body: Node2D) -> void:
 	if body.is_in_group("enemies"):

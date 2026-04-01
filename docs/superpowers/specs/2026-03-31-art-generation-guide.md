@@ -315,19 +315,37 @@ highly detailed face, beautiful detailed eyes,
 cel shaded, clean linework, vibrant colors,
 ```
 
-### Tag Block B: Chibi Sprites (all in-game sprites, enemy, structures)
+### Tag Block B: ARIA In-Game Sprites (third-person LoL-style view)
 
 ```
-masterpiece, best quality, chibi, game sprite,
+masterpiece, best quality, game sprite,
 genshin impact style, anime game CG,
-cute, super deformed, big head, big eyes, small body,
 full body, single character,
+third person view, slightly overhead camera angle,
+isometric game character, league of legends style,
 cel shaded, clean linework, vibrant colors,
-game asset,
+game asset, solid white background,
 ```
 
-Note: Use "solid bright green background" (NOT white) for chroma-key removal.
-Note: Do NOT include "big head, big eyes" for structure/building assets.
+Note: rembg AI background removal used instead of chroma-key.
+Note: Sprites must match portraits -- same hair color, outfit, weapons, eye color.
+
+### Tag Block B2: Structures (AoE isometric style)
+
+```
+masterpiece, best quality, game asset,
+genshin impact style, anime game CG,
+isometric view, age of empires style building,
+cel shaded, clean linework,
+solid white background,
+```
+
+### Tag Block B3: Map Tiles (top-down Minecraft style)
+
+```
+seamless tileable texture, top down view,
+minecraft style, game texture, pixel art,
+```
 
 ### Tag Block C: ARIA Shared Features (every ARIA prompt)
 
@@ -390,22 +408,22 @@ jpeg artifacts, error,
 
 | Asset | Seed | Asset | Seed |
 |-------|------|-------|------|
-| bg_lore | 5001 | rex_dead | 3001 |
-| bg_briefing | 5002 | aurora_dead | 3002 |
-| rex_portrait | 1001 | lily_dead | 3003 |
-| aurora_portrait | 1002 | hana_dead | 3004 |
-| lily_portrait | 1003 | zombie_sprite | 6001 |
-| hana_portrait | 1004 | base | 7001 |
-| rex_sprite | 2001 | wall | 7002 |
+| bg_lore | 5004 (tested, approved) | rex_dead | 2002 (matched alive seed) |
+| bg_briefing | 5005 (tested, approved) | aurora_dead | 2005 (matched alive seed) |
+| rex_portrait | 1004 (tested, approved) | lily_dead | 2006 (matched alive seed) |
+| aurora_portrait | 1005 (tested, approved) | hana_dead | 2007 (matched alive seed) |
+| lily_portrait | 1004 (tested, approved) | zombie_sprite | 6022 (tested, approved, cartoon style) |
+| hana_portrait | 1006 (tested, approved) | base | 7010 (tested, approved, exterior) |
+| rex_sprite | 2002 (tested, approved) | wall | 7022 (tested, approved) |
 | | | projectile | N/A (programmatic) |
-| aurora_sprite | 2002 | barricade | 7003 |
-| lily_sprite | 2003 | tile_dirt | 8001 |
-| hana_sprite | 2004 | tile_dead_grass | 8002 |
-| | | tile_rubble | 8003 |
-| | | tile_road | 8004 |
-| | | tile_rust | 8005 |
-| | | tile_bridge | 8006 |
-| | | tile_dead_tree | 8007 |
+| aurora_sprite | 2005 (tested, approved) | barricade | 7033 (tested, approved) |
+| lily_sprite | 2006 (tested, approved) | tile_dirt | 8001 (tested, approved) |
+| hana_sprite | 2007 (tested, approved) | tile_dead_grass | 8003 (tested, approved) |
+| | | tile_rubble | 8006 (tested, approved) |
+| | | tile_road | 8004 (tested, approved) |
+| | | tile_rust | 8006 (tested, approved) |
+| | | tile_bridge | 8009 (tested, approved) |
+| | | tile_dead_tree | 8009 (tested, approved) |
 
 ---
 
