@@ -859,7 +859,9 @@ bad anatomy, bad hands, missing fingers, extra fingers, extra digit, fewer digit
 ```
 Prompt:
 masterpiece, best quality, game sprite,
-game asset, solid bright green background,
+genshin impact style, anime game CG,
+game asset, cel shaded, clean linework,
+solid bright green background,
 metal barricade wall segment,
 corrugated steel sheet, rivets, rust patches,
 vertical defensive wall, post apocalyptic,
@@ -873,7 +875,9 @@ bad anatomy, bad hands, missing fingers, extra fingers, extra digit, fewer digit
 ```
 Prompt:
 masterpiece, best quality, game sprite,
-game asset, solid bright green background,
+genshin impact style, anime game CG,
+game asset, cel shaded, clean linework,
+solid bright green background,
 sandbag barricade with scrap metal,
 stacked sandbags, metal scrap on top,
 low defensive barrier, post apocalyptic,
