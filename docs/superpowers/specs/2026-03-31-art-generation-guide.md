@@ -41,16 +41,17 @@ All ARIA units share these design elements to visually unify them as products of
 | Anima cyan | #40E0FF | 64, 224, 255 | Eyes, forehead diamond, weapon accents, healing glow |
 | Chassis white | #E8E0D8 | 232, 224, 216 | Joint plates, base armor underlay |
 | Panel line gray | #A0A0A8 | 160, 160, 168 | Seam lines on skin |
-| Rex crimson | #CC3333 | 204, 51, 51 | Primary armor accent |
-| Rex crimson dark | #8B1A1A | 139, 26, 26 | Shadow/secondary |
-| Aurora gold | #E6B832 | 230, 184, 50 | Primary armor accent |
+| Rex reddish-pink (theme) | #E85580 | 232, 85, 128 | Hair color, armor accent, scarf, identity color |
+| Rex reddish-pink dark | #B83060 | 184, 48, 96 | Shadow/secondary |
+| Aurora gold (theme) | #E6B832 | 230, 184, 50 | Hair color, armor accent, identity color |
 | Aurora gold dark | #B08820 | 176, 136, 32 | Shadow/secondary |
-| Lily emerald | #55CC66 | 85, 204, 102 | Coat, cross, healing glow |
-| Lily emerald dark | #338844 | 51, 136, 68 | Shadow/secondary |
-| Hana cobalt | #5599DD | 85, 153, 221 | Jumpsuit, tool accents |
-| Hana cobalt dark | #336699 | 51, 102, 153 | Shadow/secondary |
-| Zombie flesh | #667755 | 102, 119, 85 | Zombie skin |
-| Zombie eyes | #FF3333 | 255, 51, 51 | Zombie glowing eyes |
+| Lily elf green (theme) | #66CC88 | 102, 204, 136 | Hair color, coat accent, healing glow, identity color |
+| Lily elf green dark | #449966 | 68, 153, 102 | Shadow/secondary |
+| Hana dark brown (theme) | #3A2820 | 58, 40, 32 | Hair color, identity color |
+| Hana dark brown mid | #5C4030 | 92, 64, 48 | Hair highlights |
+| Hana accent blue | #5599DD | 85, 153, 221 | Jumpsuit, tool accents (secondary identity) |
+| Zombie pale lavender | #998899 | 153, 136, 153 | Zombie skin (anime-style, not grotesque) |
+| Zombie eyes | #FF6666 | 255, 102, 102 | Zombie glowing eyes (softer red) |
 
 ### World Palette
 
@@ -73,18 +74,20 @@ All ARIA units share these design elements to visually unify them as products of
 **Personality Traits (visible in art):** Determined, protective, slightly fierce. Stands like she's guarding something behind her. Never relaxed -- always battle-ready. Slight forward lean, weight on front foot.
 
 **Physical Design:**
-- **Hair:** Short, choppy, dark brown (#5C3020) with crimson tips (#CC3333). Messy, wind-swept, practical cut. Bangs swept to the right, exposing the forehead Anima diamond. Longest strands reach jawline.
+- **Hair:** Short, choppy, reddish-pink (#E85580). Vibrant and eye-catching -- this is her identity color. Messy, wind-swept, practical cut. Bangs swept to the right, exposing the forehead Anima diamond. Longest strands reach jawline. The pink-red hue contrasts against her heavy armor.
 - **Eyes:** Cyan (#40E0FF), sharp and intense. Slight narrow/focused look. Inner glow visible.
 - **Face:** Strong jawline for an android. Determined set to the mouth. Small scar-like panel line across left cheek (battle damage never repaired -- she refused).
 - **Build:** Stocky for an ARIA unit. Reinforced frame -- wider shoulders, thicker limbs. Heaviest of the four. Stands with feet shoulder-width apart.
 - **Height reference:** Shortest of the four (compact tank frame).
 
 **Equipment Design:**
-- **Armor:** Heavy crimson (#CC3333) plate armor over white chassis. Layered pauldrons (shoulder plates) -- left pauldron is larger (shield side). Chest plate has an engraved Duskwall crest (simple shield with "D" initial). Armor shows battle damage: scratches, dents, scorch marks. This is worn gear, not ceremonial.
+- **Armor:** Heavy reddish-pink (#E85580) tinted plate armor over white chassis. The armor matches her hair -- she is visually unified by color. Layered pauldrons (shoulder plates) -- left pauldron is larger (shield side). Chest plate has an engraved Duskwall crest (simple shield with "D" initial). Armor shows battle damage: scratches, dents, scorch marks. This is worn gear, not ceremonial.
 - **Shield:** Tower shield, rectangular with rounded top, taller than her torso. Held in left hand/arm. Material: brushed steel (#88909A) with crimson trim. Surface has impact marks, a crack running diagonally, and the Duskwall crest painted in worn crimson at center. The shield defines her silhouette from the left side.
 - **Sword:** Broad sword in right hand. Standard length (hip to ground when held down). Blade is steel with a faint cyan glow along the cutting edge (#40E0FF at 30% opacity). Cross-guard is gold (#CC9933). Grip wrapped in dark leather.
-- **Scarf:** Tattered red (#FF4444) fabric scarf. Wrapped once around the neck, trailing behind over the right shoulder. Frayed edges, battle-worn. This is her signature emotional element -- it belonged to the original Reika.
+- **Scarf:** Tattered reddish-pink (#E85580) fabric scarf matching her hair color. Wrapped once around the neck, trailing behind over the right shoulder. Frayed edges, battle-worn. This is her signature emotional element -- it belonged to the original Reika.
 - **Boots:** Heavy crimson armored boots. Knee-high. Steel toe caps. Functional, not decorative.
+
+**Theme Color Rule:** Rex's reddish-pink hair IS her identity color. Her armor, scarf, and UI elements all echo this hue. When you see reddish-pink in any context, it means Rex.
 
 **Silhouette Test:** From pure black silhouette, Rex is identifiable by: wide stance, oversized shield on left, sword on right, pauldron bulk, trailing scarf.
 
@@ -121,7 +124,7 @@ All ARIA units share these design elements to visually unify them as products of
 **Personality Traits (visible in art):** Gentle, compassionate, warm. Stands with open posture -- hands often slightly raised or open. Slight smile. Looks like she's about to help someone. Soft, approachable body language.
 
 **Physical Design:**
-- **Hair:** Long, wavy, pastel pink (#DC8CB4). Reaches mid-back. Soft curls, not perfectly straight. Frames face gently. A few strands fall across forehead near the Anima diamond. Hair moves softly as if in a gentle breeze.
+- **Hair:** Long, wavy, elf green (#66CC88). Reaches mid-back. Soft curls, not perfectly straight. Luminous green like forest leaves in sunlight -- this is her identity color. Frames face gently. A few strands fall across forehead near the Anima diamond. Hair moves softly as if in a gentle breeze. The green hair matches her coat and healing glow, creating a unified verdant identity.
 - **Eyes:** Cyan (#40E0FF), large and warm. Softer glow than others -- more gentle luminance. Expressive, kind. Slight upward curve to eyebrows (compassionate resting expression).
 - **Face:** Soft, rounded features. Warm expression. Gentle smile with lips slightly parted. The kindest face of the four. Small beauty mark below left eye (a deliberate design choice -- Dr. Mori had one).
 - **Build:** Medium frame. Graceful, balanced proportions. Neither bulky nor frail. Moves with careful precision (surgeon's hands).
@@ -146,7 +149,7 @@ All ARIA units share these design elements to visually unify them as products of
 **Personality Traits (visible in art):** Confident, energetic, resourceful, slightly cocky. Stands with weight shifted, one hand on hip or gesturing. Grin, not a smile -- she's having fun. Looks like she just figured out how to fix everything. Most animated of the four.
 
 **Physical Design:**
-- **Hair:** Brown (#8B5A32), pulled back in a practical high ponytail. Bangs across forehead, slightly messy. Ponytail is thick, reaches mid-back, has a slight curl at the end. A few loose strands escape the tie.
+- **Hair:** Dark blackish-brown (#3A2820), almost black with warm brown highlights (#5C4030) in light. Pulled back in a practical high ponytail. Bangs across forehead, slightly messy. Ponytail is thick, reaches mid-back, has a slight curl at the end. A few loose strands escape the tie. The dark hair contrasts with her bright blue jumpsuit and amber goggles.
 - **Eyes:** Cyan (#40E0FF), bright and inquisitive. Wide, alert, always looking at something with interest. Slight spark of mischief.
 - **Face:** Approachable, rounded but defined features. Confident grin showing teeth. Slight smudge of grease on right cheek (she never cleans up). Eyebrows slightly raised -- perpetually interested expression.
 - **Build:** Athletic, practical. Medium height, strong arms (builder's frame). Rolled-up sleeves showing forearm chassis joints. Most visibly "working" posture of the four.
@@ -168,17 +171,19 @@ All ARIA units share these design elements to visually unify them as products of
 
 ### ZOMBIE (Irradiated Mutant)
 
-These are not classic undead -- they are living creatures mutated by solar radiation. Former animals (and some former humans) whose DNA was rewritten by the eleven-day bombardment. They are driven purely by hunger.
+These are not classic undead -- they are living creatures mutated by solar radiation. Former animals (and some former humans) whose DNA was rewritten by the eleven-day bombardment. They are driven purely by hunger. Visually, they follow the same anime art style as ARIA units -- stylized, not realistic horror. Think anime monster design, not Walking Dead.
 
 **Physical Design:**
-- **Skin:** Gray-green (#667755), mottled, rough texture. Patches of exposed muscle (dark red #553333). Skin looks taut and dried in some places, swollen in others.
-- **Eyes:** Glowing red (#FF3333). Pupilless, featureless glow. 2-3 eyes (mutation) -- not always symmetrically placed. One main pair plus a third on the forehead or cheek.
-- **Mouth:** Too wide, jaw distended. Teeth visible, jagged, some broken. Dark interior.
-- **Body:** Humanoid but wrong. One arm longer than the other. Hunched posture. Visible spine bumps through skin. Torn remnants of pre-apocalypse clothing (brown rags #604030). Exposed bone at joints (#C8C0B0).
-- **Movement:** Shambling, one leg dragging. Arms reaching forward. Lurching gait.
+- **Skin:** Pale lavender-gray (#998899), smooth anime-style rendering. Not mottled or gore-textured. Clean enough to fit the anime aesthetic. Slight purple undertone suggests radiation mutation.
+- **Eyes:** Glowing soft red (#FF6666). Round, large anime-style eyes but with a vacant hungry look. Single pair (not multiple -- keep it clean). The glow is the main threat indicator.
+- **Mouth:** Slightly too wide, showing pointed teeth in an anime fang style. Not grotesque -- more "cute-menacing" like a chibi monster. Dark interior.
+- **Body:** Humanoid, slightly hunched. One arm slightly longer (subtle asymmetry, not extreme). Torn remnants of pre-apocalypse clothing (faded purple-brown rags #665555). Visible cracks/veins on skin in a stylized pattern (not realistic gore). Some bandage wrappings on arms/legs.
+- **Hair:** Messy, stringy, dark desaturated purple (#554455). Unkempt but still reads as anime hair, not realistic matted hair.
+- **Movement:** Shambling, arms reaching forward. Tilted head. Lurching but with anime-proportioned limbs.
 - **Size:** Similar to ARIA units but hunched, so appears shorter.
+- **Overall tone:** Anime monster, not horror monster. Should look threatening but not disturbing. Think Slime from Dragon Quest or hollows from Bleach -- stylized enemies that fit in an anime world.
 
-**Visual distinction from ARIA:** Zombies must be immediately distinguishable from ARIA. Key differences: organic (no chassis/panel lines), red eyes (not cyan), no glowing elements except eyes, asymmetric/broken form (ARIA are symmetrical/clean), earth-tone palette (ARIA have vivid class colors).
+**Visual distinction from ARIA:** Zombies must be immediately distinguishable from ARIA. Key differences: desaturated palette (ARIA have vivid colors), red eyes (not cyan), no glowing cyan elements, vacant expression (ARIA have personality), hunched posture (ARIA stand upright), ragged clothing (ARIA have clean armor/uniforms).
 
 ---
 
@@ -391,14 +396,14 @@ small glowing cyan diamond on forehead,
 cyan glowing eyes, pale luminous skin,
 subtle panel lines on skin,
 1girl, upper body portrait,
-short choppy dark brown hair with crimson red tips,
+short choppy reddish pink hair,
 sharp intense cyan glowing eyes,
-heavy crimson red plate armor, layered pauldrons,
+heavy reddish pink plate armor, layered pauldrons,
 chest plate with shield crest engraving,
 battle damaged scratched dented armor,
 tower shield visible on left edge of frame,
 broad sword handle visible at bottom right,
-red tattered scarf around neck trailing behind,
+reddish pink tattereddish pink scarf around neck trailing behind,
 strong determined protective expression,
 dramatic warm orange side lighting from left,
 post-apocalyptic ruined city background blurred,
@@ -447,7 +452,7 @@ small glowing cyan diamond on forehead,
 cyan glowing eyes, pale luminous skin,
 subtle panel lines on skin,
 1girl, upper body portrait,
-long wavy pastel pink hair flowing softly,
+long wavy elf green hair flowing softly,
 warm gentle cyan glowing eyes,
 white medical uniform, emerald green tactical long coat,
 green cross emblem on left breast,
@@ -475,7 +480,7 @@ small glowing cyan diamond on forehead,
 cyan glowing eyes, pale luminous skin,
 subtle panel lines on skin,
 1girl, upper body portrait,
-brown hair in high ponytail, bangs across forehead,
+dark blackish brown hair in high ponytail, bangs across forehead,
 bright inquisitive cyan glowing eyes,
 cobalt blue engineer jumpsuit, rolled up sleeves,
 amber goggles pushed up on forehead,
@@ -504,12 +509,12 @@ feminine android, white silver chassis at joints,
 small glowing cyan diamond on forehead,
 cyan glowing eyes, pale luminous skin,
 1girl chibi,
-short choppy dark brown hair with crimson tips,
+short choppy reddish pink hair,
 big cute cyan glowing eyes, determined expression, blush,
-heavy crimson red plate armor, large pauldrons,
+heavy reddish pink plate armor, large pauldrons,
 oversized tower shield in left hand,
 broad sword with cyan edge in right hand,
-red tattered scarf trailing behind,
+reddish pink tattereddish pink scarf trailing behind,
 wide battle stance,
 
 Negative:
@@ -552,7 +557,7 @@ feminine android, white silver chassis at joints,
 small glowing cyan diamond on forehead,
 cyan glowing eyes, pale luminous skin,
 1girl chibi,
-long wavy pastel pink hair,
+long wavy elf green hair,
 big cute warm cyan glowing eyes, gentle smile, blush,
 white uniform, emerald green long coat, green cross emblem,
 soft green healing glow from left hand,
@@ -576,7 +581,7 @@ feminine android, white silver chassis at joints,
 small glowing cyan diamond on forehead,
 cyan glowing eyes, pale luminous skin,
 1girl chibi,
-brown hair in high ponytail, bangs,
+dark blackish brown hair in high ponytail, bangs,
 big cute bright cyan glowing eyes, confident grin, blush,
 cobalt blue engineer jumpsuit, rolled up sleeves,
 amber goggles pushed up on forehead,
@@ -607,7 +612,7 @@ eyes closed, dimmed, offline expression,
 heavy crimson armor cracked and broken,
 shattered tower shield pieces nearby,
 sword dropped on ground beside her,
-red scarf torn and limp,
+reddish pink scarf torn and limp,
 lying on side, fallen pose,
 sparks from exposed joints, battle damage,
 
@@ -649,7 +654,7 @@ pixel art style, game asset,
 feminine android, white silver chassis at joints,
 dark cracked diamond on forehead,
 1girl chibi,
-long wavy pastel pink hair spread around her,
+long wavy elf green hair spread around her,
 eyes closed, dimmed, peaceful offline expression,
 white uniform and green coat spread around her,
 no healing glow, dark hands,
@@ -672,7 +677,7 @@ pixel art style, game asset,
 feminine android, white silver chassis at joints,
 dark cracked diamond on forehead,
 1girl chibi,
-brown hair loose from ponytail, messy,
+dark blackish brown hair loose from ponytail, messy,
 eyes closed, dimmed, offline expression,
 cobalt blue jumpsuit torn and damaged,
 goggles cracked fallen beside her,
@@ -697,12 +702,12 @@ feminine android, white silver chassis at joints,
 cracking cyan diamond on forehead leaking light,
 dimming cyan eyes,
 1girl,
-short choppy dark brown hair with crimson tips,
-heavy crimson plate armor shattered and breaking,
+short choppy reddish pink hair,
+heavy reddish pink plate armor shattered and breaking,
 falling backward, reaching one hand toward viewer,
 tower shield shattering into pieces behind her,
 sword falling from other hand,
-red scarf unfurling in slow motion,
+reddish pink scarf unfurling in slow motion,
 defiant expression even in death, teeth gritted,
 3 to 5 zombies emerging from green fog behind her,
 zombies with glowing red eyes in darkness,
@@ -753,7 +758,7 @@ feminine android, white silver chassis at joints,
 cracking cyan diamond on forehead leaking light,
 dimming cyan eyes, tears,
 1girl,
-long wavy pastel pink hair flowing,
+long wavy elf green hair flowing,
 white uniform and green coat torn,
 on her knees, reaching forward with both hands,
 healing glow fading from palms,
@@ -782,7 +787,7 @@ feminine android, white silver chassis at joints,
 cracking cyan diamond on forehead leaking light,
 dimming cyan eyes,
 1girl,
-brown hair loose from ponytail,
+dark blackish brown hair loose from ponytail,
 cobalt blue jumpsuit torn,
 goggles pushed up, eyes dimming,
 collapsed against a metal barricade she just built,
@@ -807,19 +812,20 @@ cute, super deformed, big head, big eyes, small body,
 full body, standing, solid white background,
 simple clean background, single character,
 pixel art style, game asset,
-zombie monster mutant,
-gray green mottled skin, grotesque,
-big glowing red eyes, multiple eyes,
-distended jaw, jagged teeth, too wide mouth,
-torn brown rags clothing,
-one arm longer reaching forward,
-hunched shambling pose,
-exposed bone at joints,
-patches of exposed dark red muscle,
-asymmetric body, wrong proportions,
+anime style zombie mutant,
+pale lavender gray skin, stylized,
+big round glowing red eyes, vacant hungry expression,
+anime fangs, slightly too wide mouth,
+messy stringy dark purple hair,
+torn faded purple brown rags clothing,
+bandage wrappings on arms,
+one arm slightly longer reaching forward,
+hunched shambling pose, tilted head,
+stylized crack patterns on skin,
+anime monster design, cute menacing,
 
 Negative:
-[Tag Block D], cute girl, anime girl, pretty, beautiful, clean, symmetrical, healthy skin, blue eyes, cyan eyes
+[Tag Block D], gore, blood, realistic, horror, scary, disgusting, grotesque, blue eyes, cyan eyes, pretty girl
 ```
 
 **base.png** (Seed: 7001, 512x512, 25 steps, CFG 7.0)
