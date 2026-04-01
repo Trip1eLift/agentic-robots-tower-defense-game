@@ -200,7 +200,7 @@ Mutated living creatures, not classic undead. **Same anime art style as ARIA** -
 
 ## 4. Asset Manifest
 
-**Total: 25 assets** (20 core + 5 map/structures)
+**Total: 26 assets** (20 core + 5 map/structures + 1 projectile)
 
 ### Backgrounds
 
@@ -266,6 +266,14 @@ This approach is reliable, consistent, and avoids the hardest-to-generate images
 | 16 | `base.png` | 384x384 | 128x128 | Fortified bunker. Metal walls, antenna, reinforced door, warm orange window light. Sandbags. Duskwall crest. Slight top-down angle. Bright green background. |
 | 17 | `wall.png` | 384x384 | 64x64 | Metal barricade wall segment. Corrugated steel, rivets, rust patches. Vertical. Bright green background. |
 | 18 | `barricade.png` | 384x384 | 64x64 | Sandbags + scrap metal low barrier. Stacked sandbags with metal scrap on top. Bright green background. |
+
+### Projectile
+
+| # | Filename | Gen Size | Final Size | Description |
+|---|----------|----------|-----------|-------------|
+| 19 | `projectile.png` | N/A | 16x16 | Simple energy bolt. Bright cyan/white glow. Programmatic (Pillow), not AI-generated. Used for Aurora, Lily, Hana ranged attacks. Rex has no projectile (melee). |
+
+Note: Projectile is simple enough that programmatic generation is better than AI. A glowing cyan-white circle with a short trail.
 
 ### Map Tiles
 
@@ -374,6 +382,7 @@ jpeg artifacts, error,
 | lily_portrait | 1003 | zombie_sprite | 6001 |
 | hana_portrait | 1004 | base | 7001 |
 | rex_sprite | 2001 | wall | 7002 |
+| | | projectile | N/A (programmatic) |
 | aurora_sprite | 2002 | barricade | 7003 |
 | lily_sprite | 2003 | tile_dirt | 8001 |
 | hana_sprite | 2004 | tile_dead_grass | 8002 |
@@ -782,7 +791,7 @@ stylized crack patterns on skin,
 anime monster design, cute menacing,
 
 Negative:
-bad anatomy, bad hands, missing fingers, extra fingers, extra digit, fewer digits, blurry, low quality, worst quality, normal quality, watermark, text, signature, username, artist name, cropped, out of frame, deformed, disfigured, ugly, duplicate, morbid, mutilated, poorly drawn face, poorly drawn hands, extra arms, extra legs, fused fingers, too many fingers, long neck, multiple characters, 2girls, multiple views, split screen, male, masculine, boy, man, jpeg artifacts, error, gore, blood, realistic, horror, scary, disgusting, grotesque, blue eyes, cyan eyes, pretty girl
+bad anatomy, bad hands, missing fingers, extra fingers, extra digit, fewer digits, blurry, low quality, worst quality, normal quality, watermark, text, signature, username, artist name, cropped, out of frame, deformed, disfigured, ugly, duplicate, morbid, mutilated, poorly drawn face, poorly drawn hands, extra arms, extra legs, fused fingers, too many fingers, long neck, multiple characters, multiple views, split screen, jpeg artifacts, error, gore, blood, realistic, horror, scary, disgusting, grotesque, blue eyes, cyan eyes, pretty girl, beautiful girl, cute girl
 ```
 
 **base.png** (384x384, 25 steps, CFG 7.0, Seed 7001)
@@ -875,8 +884,14 @@ rope and nail details, brown wood, game texture, top down view
 
 **tile_dead_tree.png** (Seed 8007)
 ```
+Prompt:
 dead leafless tree, bare branches, dark brown trunk,
-post apocalyptic, game asset, transparent background, top down view
+post apocalyptic, game asset,
+solid bright green background,
+side view, three quarter angle,
+
+Negative:
+bad anatomy, bad hands, missing fingers, extra fingers, extra digit, fewer digits, blurry, low quality, worst quality, normal quality, watermark, text, signature, username, artist name, cropped, out of frame, deformed, disfigured, ugly, duplicate, morbid, mutilated, poorly drawn face, poorly drawn hands, extra arms, extra legs, fused fingers, too many fingers, long neck, multiple characters, 2girls, multiple views, split screen, male, masculine, boy, man, jpeg artifacts, error, people, characters, anime girl
 ```
 
 ---
@@ -889,10 +904,11 @@ post apocalyptic, game asset, transparent background, top down view
 3. Apply slight blur (radius 1px) to smooth upscaling artifacts
 
 ### Sprite Background Removal (Chroma-Key)
-All sprites are generated on **bright green background** (#00FF00).
+All sprites AND tile_dead_tree are generated on **bright green background** (#00FF00).
 1. Remove all pixels within tolerance of pure green (hue 100-140, saturation > 50%)
 2. Edge refinement: 1px erosion on alpha channel to remove green fringing
 3. Save as RGBA PNG with transparent background
+Applies to: all ARIA sprites (alive+dead), zombie, base, wall, barricade, tile_dead_tree.
 
 ### Sprite Downscaling
 1. Generate at 384x384 (sprites) or 256x256 (tiles)
@@ -926,7 +942,8 @@ AI generation rarely produces perfect results on first try. Follow this workflow
 1. Generate **4 variants** per seed (use seeds: base, base+1, base+2, base+3)
 2. Visually review all 4 at target resolution (not just full-res)
 3. Pick the best one
-4. If none are acceptable, adjust prompt and re-batch
+4. **Color check:** Spot-check hair, eyes, Anima diamond against palette table. Adjust hue/saturation in post if drifted.
+5. If none are acceptable, adjust prompt and re-batch
 
 ### Common Issues and Fixes
 | Issue | Fix |
@@ -950,7 +967,7 @@ If AI generation consistently fails for an asset category after 3 batches:
 ## 10. Scope & Deferrals
 
 ### MVP (this spec)
-- 25 static assets: 2 backgrounds, 4 portraits, 8 sprites (alive+dead), 1 zombie, 3 structures, 7 map tiles
+- 26 static assets: 2 backgrounds, 4 portraits, 8 sprites (alive+dead), 1 zombie, 3 structures, 1 projectile, 7 map tiles
 - Death splash via portrait + in-engine effects (not AI art)
 - Static sprites only (no animation frames)
 
