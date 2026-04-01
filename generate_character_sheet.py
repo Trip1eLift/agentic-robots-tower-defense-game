@@ -119,6 +119,18 @@ CHIBI_SUFFIX = """
 front view, standing pose,
 cute expression, blush,"""
 
+CHIBI_DEAD_SUFFIX = """
+fallen, collapsed, lying down, defeated,
+eyes closed, unconscious, knocked out,
+broken weapon nearby, sad, damaged armor,"""
+
+DEAD_TAGS = {
+    "aurora": "collapsed over broken sniper rifle, visor cracked,",
+    "rex": "fallen on side, shield cracked, sword dropped nearby,",
+    "lily": "lying on back, coat spread, no healing glow, pistol dropped,",
+    "hana": "slumped forward, wrench dropped, goggles cracked beside her,",
+}
+
 NEGATIVE_BASE = """bad anatomy, bad hands, missing fingers, extra fingers,
 blurry, low quality, worst quality,
 watermark, text, signature, username,
@@ -158,6 +170,20 @@ def build_chibi_workflow(character: str, seed: int, ref_image: str = None) -> di
     return _make_workflow(positive, negative, seed,
                          width=384, height=384,
                          filename=f"{character}_chibi_seed{seed}",
+                         checkpoint="anything-v5.safetensors",
+                         steps=25, cfg=7.0)
+
+
+def build_dead_workflow(character: str, seed: int) -> dict:
+    """Build single dead/defeated chibi sprite on Anything V5."""
+    char = IDENTITY[character]
+    dead_extra = DEAD_TAGS.get(character, "")
+    positive = CHIBI_PREFIX + char["tags"] + "\n" + dead_extra + CHIBI_DEAD_SUFFIX
+    negative = char["extra_negative"] + NEGATIVE_BASE + CHIBI_NEGATIVE_EXTRA + "\nstanding, happy, smiling, open eyes,"
+
+    return _make_workflow(positive, negative, seed,
+                         width=384, height=384,
+                         filename=f"{character}_dead_seed{seed}",
                          checkpoint="anything-v5.safetensors",
                          steps=25, cfg=7.0)
 
@@ -417,6 +443,8 @@ def generate_batch(character: str, seeds: list, mode: str,
         print(f"[{mode} seed {seed}] Queuing...")
         if mode == "portrait":
             workflow = build_portrait_workflow(character, seed)
+        elif mode == "dead":
+            workflow = build_dead_workflow(character, seed)
         else:
             workflow = build_chibi_workflow(character, seed, ref_image=ref_filename)
 
@@ -436,8 +464,8 @@ def main():
     parser = argparse.ArgumentParser(description="Generate ARIA character sheets with IP-Adapter")
     parser.add_argument("--character", required=True, choices=list(IDENTITY.keys()))
     parser.add_argument("--seeds", default="3001-3005", help="Seed or range (e.g. 3001 or 3001-3005)")
-    parser.add_argument("--mode", default="chibi", choices=["portrait", "chibi", "both"],
-                        help="Generate portrait, chibi sheet, or both")
+    parser.add_argument("--mode", default="chibi", choices=["portrait", "chibi", "dead", "both"],
+                        help="Generate portrait, chibi, dead, or both (portrait+chibi)")
     parser.add_argument("--ref", default=None, help="Reference portrait image for IP-Adapter (chibi mode)")
     parser.add_argument("--weight", type=float, default=0.8, help="IP-Adapter weight (0.0-1.0)")
     parser.add_argument("--output", default="output/sheets", help="Output directory")
