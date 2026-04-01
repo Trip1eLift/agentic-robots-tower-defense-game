@@ -1,9 +1,28 @@
-# ARIA: Defenders of Duskwall -- Art Generation Guide
+# ARIA: Defenders of Duskwall -- Art Generation Guide v2
 
 **Date:** 2026-03-31
-**Status:** Approved
-**Model:** Anything V5 (anythingV5_v5PrtRE.safetensors) via ComfyUI
+**Status:** Approved (post-review revision)
+**Model:** Anything V5 (anything-v5.safetensors) via ComfyUI
 **Hardware:** NVIDIA RTX 4060 (8GB VRAM)
+
+---
+
+## Review Fixes Applied
+
+This revision addresses all 21 issues from the 5-stage review gauntlet:
+- Sprite size: 48x48 -> **128x128** (AI art readable at this size)
+- Gen resolution: 512x512 -> **384x384** for sprites (384/128 = 3x clean ratio)
+- Backgrounds: 1920x1080 -> **generate at 512x288, upscale to 1920x1080** (SD 1.5 training distribution)
+- Death splashes: 1024x576 -> **MVP: portrait + dark overlay + effects in-engine** (overscoped for AI gen)
+- Background removal: flood-fill -> **bright green chroma-key** (protects light hair colors)
+- Added: **map tiles, barricade, wall structures, VFX notes**
+- Fixed: Aurora hair inconsistency (locked to "golden blonde"), Rex prompt typos
+- Fixed: Dead sprite hair colors match alive versions
+- Fixed: Base sprite tags (removed chibi head/eyes tags for buildings)
+- Added: **iteration strategy** (batch generate, pick best, refine)
+- Added: **fallback plan** for failed generations
+- Explicit: **animation is Phase 2**, static sprites for MVP
+- Weapons verified: Rex=melee (shield+sword, NO gun), Aurora/Lily/Hana=ranged (guns)
 
 ---
 
@@ -17,6 +36,8 @@
 6. [Generation Parameters](#6-generation-parameters)
 7. [Prompt Templates](#7-prompt-templates)
 8. [Post-Processing](#8-post-processing)
+9. [Iteration Strategy](#9-iteration-strategy)
+10. [Scope & Deferrals](#10-scope--deferrals)
 
 ---
 
@@ -28,142 +49,136 @@ All ARIA units share these design elements to visually unify them as products of
 
 - **Base chassis:** White/silver metallic body visible at joints (neck seams, elbow joints, knee joints, finger segments). Not full-body metal -- more like synthetic skin over mechanical structure.
 - **Anima core indicator:** Small glowing cyan diamond shape on center of forehead. This is the visual marker of an active Anima consciousness. All 4 units have this. When dead/offline, this diamond is dark/cracked.
-- **Eye color:** All ARIA units have identical cyan glowing eyes (RGB: 64, 224, 255). Pupils are visible but the iris glows. The glow intensifies during combat or emotional moments.
-- **Panel lines:** Subtle seam lines on skin at temples, along jawline, down the sides of the neck, and on the backs of hands. These are faint -- not robotic, more like a porcelain doll with visible joins.
-- **Age appearance:** All units appear 18-20 years old. Youthful but not childish. Mature enough to read as combat-capable.
-- **Skin tone:** Pale but warm. Slightly luminous quality (the Anima energy beneath the synthetic skin). Not corpse-pale, not tanned. Think porcelain with a faint inner glow.
-- **Body type:** Feminine humanoid. Athletic and functional, not exaggerated. Each class has a distinct build (see individual sheets).
+- **Eye color:** All ARIA units have identical cyan glowing eyes (RGB: 64, 224, 255). Pupils are visible but the iris glows.
+- **Panel lines:** Subtle seam lines on skin at temples, along jawline, down the sides of the neck, and on the backs of hands. Faint -- like a porcelain doll with visible joins.
+- **Age appearance:** 18-20 years old. Youthful but not childish.
+- **Skin tone:** Pale but warm. Slightly luminous. Porcelain with a faint inner glow.
+- **Body type:** Feminine humanoid. Athletic and functional, not exaggerated.
 
 ### Color Palette (exact values)
 
+**Theme color = hair color.** Each ARIA's hair IS their identity color. Armor, accents, and UI echo this hue.
+
 | Element | Hex | RGB | Usage |
 |---------|-----|-----|-------|
-| Anima cyan | #40E0FF | 64, 224, 255 | Eyes, forehead diamond, weapon accents, healing glow |
-| Chassis white | #E8E0D8 | 232, 224, 216 | Joint plates, base armor underlay |
+| Anima cyan | #40E0FF | 64, 224, 255 | Eyes, forehead diamond, Rex sword edge |
+| Chassis white | #E8E0D8 | 232, 224, 216 | Joint plates, base armor |
 | Panel line gray | #A0A0A8 | 160, 160, 168 | Seam lines on skin |
-| Rex reddish-pink (theme) | #E85580 | 232, 85, 128 | Hair color, armor accent, scarf, identity color |
-| Rex reddish-pink dark | #B83060 | 184, 48, 96 | Shadow/secondary |
-| Aurora gold (theme) | #E6B832 | 230, 184, 50 | Hair color, armor accent, identity color |
-| Aurora gold dark | #B08820 | 176, 136, 32 | Shadow/secondary |
-| Lily elf green (theme) | #66CC88 | 102, 204, 136 | Hair color, coat accent, healing glow, identity color |
-| Lily elf green dark | #449966 | 68, 153, 102 | Shadow/secondary |
-| Hana dark brown (theme) | #3A2820 | 58, 40, 32 | Hair color, identity color |
-| Hana dark brown mid | #5C4030 | 92, 64, 48 | Hair highlights |
-| Hana accent blue | #5599DD | 85, 153, 221 | Jumpsuit, tool accents (secondary identity) |
-| Zombie pale lavender | #998899 | 153, 136, 153 | Zombie skin (anime-style, not grotesque) |
-| Zombie eyes | #FF6666 | 255, 102, 102 | Zombie glowing eyes (softer red) |
+| **Rex reddish-pink** | #E85580 | 232, 85, 128 | Hair, armor, scarf |
+| Rex reddish-pink dark | #B83060 | 184, 48, 96 | Shadow |
+| **Aurora golden blonde** | #E6C878 | 230, 200, 120 | Hair, armor accent |
+| Aurora gold accent | #E6B832 | 230, 184, 50 | Armor plating |
+| **Lily elf green** | #66CC88 | 102, 204, 136 | Hair, coat, healing glow |
+| Lily elf green dark | #449966 | 68, 153, 102 | Shadow |
+| **Hana dark brown** | #3A2820 | 58, 40, 32 | Hair |
+| Hana brown highlight | #5C4030 | 92, 64, 48 | Hair light areas |
+| Hana cobalt blue | #5599DD | 85, 153, 221 | Jumpsuit, goggles strap |
+| Zombie pale lavender | #998899 | 153, 136, 153 | Skin (anime-style) |
+| Zombie eyes | #FF6666 | 255, 102, 102 | Glowing eyes (soft red) |
 
 ### World Palette
 
 | Element | Hex | RGB | Usage |
 |---------|-----|-----|-------|
-| Irradiated sky orange | #CC6622 | 204, 102, 34 | Horizon glow in backgrounds |
-| Duskwall stone | #555566 | 85, 85, 102 | Wall/fortification color |
-| Wasteland brown | #8B7355 | 139, 115, 85 | Ground, dirt, ruins |
-| Dead vegetation | #9B8B4A | 155, 139, 74 | Dead grass, dried plants |
-| Toxic green fog | #446633 | 68, 102, 51 | Zombie ambient atmosphere |
+| Irradiated sky orange | #CC6622 | 204, 102, 34 | Horizon glow |
+| Duskwall stone | #555566 | 85, 85, 102 | Walls/fortifications |
+| Wasteland brown | #8B7355 | 139, 115, 85 | Ground, dirt |
+| Dead vegetation | #9B8B4A | 155, 139, 74 | Dead grass |
+| Toxic green fog | #446633 | 68, 102, 51 | Zombie atmosphere |
 
 ---
 
 ## 2. Character Lore & Design Sheets
 
+### Weapon Summary
+
+| Unit | Class | Combat Type | Primary Weapon | Secondary |
+|------|-------|-------------|----------------|-----------|
+| Rex | Vanguard | **MELEE** (range 50) | Tower shield (LEFT) + Broadsword (RIGHT) | None -- no gun |
+| Aurora | Striker | **RANGED** (range 200) | Oversized sniper rifle | Thigh holster sidearm |
+| Lily | Medic | **RANGED** (range 60) | Energy pistol (RIGHT) | Healing glow (LEFT hand) |
+| Hana | Architect | **RANGED** (range 80) | Pistol (LEFT hip holster) | Oversized wrench (RIGHT, melee/build tool) |
+
 ### REX -- Vanguard Unit 01
 
-**Anima Origin:** Patterned after Lieutenant Reika Tanaka, a soldier who held the North Bridge checkpoint alone for six hours during the Fall of Citadel Seven, buying time for 200 civilians to evacuate. She died when the bridge collapsed. Her neural pattern was recovered from field medical records and became the template for Rex's Anima.
-
-**Personality Traits (visible in art):** Determined, protective, slightly fierce. Stands like she's guarding something behind her. Never relaxed -- always battle-ready. Slight forward lean, weight on front foot.
+**Anima Origin:** Patterned after Lieutenant Reika Tanaka, who held the North Bridge checkpoint alone for six hours during the Fall of Citadel Seven, buying time for 200 civilians to evacuate. She died when the bridge collapsed.
 
 **Physical Design:**
-- **Hair:** Short, choppy, reddish-pink (#E85580). Vibrant and eye-catching -- this is her identity color. Messy, wind-swept, practical cut. Bangs swept to the right, exposing the forehead Anima diamond. Longest strands reach jawline. The pink-red hue contrasts against her heavy armor.
-- **Eyes:** Cyan (#40E0FF), sharp and intense. Slight narrow/focused look. Inner glow visible.
-- **Face:** Strong jawline for an android. Determined set to the mouth. Small scar-like panel line across left cheek (battle damage never repaired -- she refused).
-- **Build:** Stocky for an ARIA unit. Reinforced frame -- wider shoulders, thicker limbs. Heaviest of the four. Stands with feet shoulder-width apart.
-- **Height reference:** Shortest of the four (compact tank frame).
+- **Hair:** Short, choppy, reddish-pink (#E85580). Vibrant -- this IS her identity color. Messy, wind-swept. Bangs swept right, exposing forehead Anima diamond. Longest strands reach jawline.
+- **Eyes:** Cyan (#40E0FF), sharp and intense. Narrow/focused.
+- **Face:** Strong jawline. Determined expression. Small scar-like panel line across left cheek.
+- **Build:** Stocky, reinforced frame, wider shoulders. Shortest of the four.
 
-**Equipment Design:**
-- **Armor:** Heavy reddish-pink (#E85580) tinted plate armor over white chassis. The armor matches her hair -- she is visually unified by color. Layered pauldrons (shoulder plates) -- left pauldron is larger (shield side). Chest plate has an engraved Duskwall crest (simple shield with "D" initial). Armor shows battle damage: scratches, dents, scorch marks. This is worn gear, not ceremonial.
-- **Shield:** Tower shield, rectangular with rounded top, taller than her torso. Held in left hand/arm. Material: brushed steel (#88909A) with crimson trim. Surface has impact marks, a crack running diagonally, and the Duskwall crest painted in worn crimson at center. The shield defines her silhouette from the left side.
-- **Sword:** Broad sword in right hand. Standard length (hip to ground when held down). Blade is steel with a faint cyan glow along the cutting edge (#40E0FF at 30% opacity). Cross-guard is gold (#CC9933). Grip wrapped in dark leather.
-- **Scarf:** Tattered reddish-pink (#E85580) fabric scarf matching her hair color. Wrapped once around the neck, trailing behind over the right shoulder. Frayed edges, battle-worn. This is her signature emotional element -- it belonged to the original Reika.
-- **Boots:** Heavy crimson armored boots. Knee-high. Steel toe caps. Functional, not decorative.
+**Equipment (MUST be visible in ALL art):**
+- **Shield (LEFT, DOMINANT):** Tower shield, rectangular with rounded top, TALLER THAN HER TORSO. Brushed steel (#88909A) with reddish-pink trim. Battle-scarred: impact marks, diagonal crack, worn Duskwall crest. THIS DEFINES HER SILHOUETTE.
+- **Sword (RIGHT):** Broad sword. Blade has faint cyan glow along cutting edge. Gold cross-guard. Dark leather grip.
+- **Armor:** Heavy reddish-pink (#E85580) plate over white chassis. Layered pauldrons (left larger for shield arm). Battle damage: scratches, dents, scorch marks.
+- **Scarf:** Tattered reddish-pink fabric. Wrapped around neck, trailing behind right shoulder. Belonged to original Reika.
+- **NO GUN.** Rex is pure melee. Never depict with a firearm.
 
-**Theme Color Rule:** Rex's reddish-pink hair IS her identity color. Her armor, scarf, and UI elements all echo this hue. When you see reddish-pink in any context, it means Rex.
-
-**Silhouette Test:** From pure black silhouette, Rex is identifiable by: wide stance, oversized shield on left, sword on right, pauldron bulk, trailing scarf.
+**Silhouette Test:** Oversized shield (left) + sword (right) + pauldron bulk + trailing scarf.
 
 ---
 
 ### AURORA -- Striker Unit 02
 
-**Anima Origin:** Patterned after Yuki Ashford, a championship precision shooter who held 14 world records. She volunteered for Anima extraction when diagnosed with terminal radiation sickness, wanting her skills to outlive her body. Her pattern produces an Anima with inhuman patience and the refusal to ever waste a shot.
-
-**Personality Traits (visible in art):** Cold, focused, calculating. Stands perfectly still. Minimal expression. One eye always behind the visor -- reading data. Slight head tilt as if tracking a target.
+**Anima Origin:** Patterned after Yuki Ashford, championship precision shooter with 14 world records. Volunteered for Anima extraction when diagnosed with terminal radiation sickness.
 
 **Physical Design:**
-- **Hair:** Long, straight, platinum blonde (#E6D078), reaching mid-back. Perfectly maintained (she's meticulous). Parts at center, frames face symmetrically. Two thin strands fall forward past shoulders.
-- **Eyes:** Cyan (#40E0FF). Left eye visible and sharp. Right eye behind the targeting visor (visor glass is red/amber, faintly transparent showing the eye behind it). Cold gaze.
-- **Face:** Elegant, angular features. Minimal expression -- resting neutral face. High cheekbones. Thin, precise lips.
-- **Build:** Slender, tall, elegant. Longest/tallest of the four. Long legs. Designed for mobility and repositioning. Lean muscle, no bulk.
-- **Height reference:** Tallest of the four.
+- **Hair:** Long, straight, golden blonde (#E6C878). Reaches mid-back. Perfectly maintained. Parts at center, frames face symmetrically.
+- **Eyes:** Cyan (#40E0FF). Left eye visible. Right eye behind targeting visor. Cold gaze.
+- **Face:** Elegant, angular. Minimal expression. High cheekbones.
+- **Build:** Slender, tall, elegant. Tallest of the four. Long legs.
 
-**Equipment Design:**
-- **Armor:** Lightweight gold/amber (#E6B832) recon plating. Form-fitting, minimal coverage -- chest plate, forearm guards, thigh plates. Prioritizes mobility over protection. White chassis visible at exposed midriff, arms, legs. Dark bodysuit underneath (#2A2A30).
-- **Targeting visor:** Red/amber monocle device over right eye. Mounted on a thin metallic frame that wraps around the right side of the head. The lens has a faint data readout visible (crosshair lines, distance numbers). The visor is her most recognizable feature. It glows faintly red (#CC3333).
-- **Sniper rifle:** Anti-materiel rifle, longer than she is tall. Held diagonally across body or resting on shoulder. Color: dark gunmetal (#3A3A40) with gold (#E6B832) accent stripes. Prominent red scope (#CC3333) mounted on top. Bipod folded against barrel. The rifle is comically large relative to her frame -- this is intentional for visual impact.
-- **Holster:** Small sidearm in a thigh holster on right leg. Barely visible but present.
-- **Boots:** Sleek, knee-high, gold-accented. Light armor. Built for running.
+**Equipment (MUST be visible in ALL art):**
+- **Sniper Rifle (DOMINANT):** Anti-materiel rifle, LONGER THAN SHE IS TALL. Dark gunmetal (#3A3A40) with gold (#E6B832) accent stripes. Prominent red scope (#CC3333). Bipod folded. THIS IS HER IDENTITY.
+- **Targeting Visor:** Red/amber monocle over right eye. Thin metallic frame. Faint data readout visible (crosshair, distance). Glows faintly red.
+- **Armor:** Lightweight gold/amber (#E6B832) recon plating. Form-fitting. Chest plate, forearm guards, thigh plates. Dark bodysuit (#2A2A30) underneath.
+- **Holster:** Small sidearm in thigh holster (right leg). Subtle.
 
-**Silhouette Test:** Identifiable by: extremely long rifle extending past body on one side, visor on head, slender tall frame, flowing hair.
+**Silhouette Test:** Extremely long rifle extending past body + visor + slender frame + flowing hair.
 
 ---
 
 ### LILY -- Medic Unit 03
 
-**Anima Origin:** Patterned after Dr. Sakura Mori, a battlefield surgeon who operated for 72 consecutive hours during the Siege of Citadel Four, saving 31 lives before collapsing from exhaustion. She survived but suffered permanent neural damage. Her pre-injury neural pattern was used for Lily's Anima, preserving her legendary composure under fire and her refusal to give up on any patient.
-
-**Personality Traits (visible in art):** Gentle, compassionate, warm. Stands with open posture -- hands often slightly raised or open. Slight smile. Looks like she's about to help someone. Soft, approachable body language.
+**Anima Origin:** Patterned after Dr. Sakura Mori, battlefield surgeon who operated 72 consecutive hours during the Siege of Citadel Four, saving 31 lives.
 
 **Physical Design:**
-- **Hair:** Long, wavy, elf green (#66CC88). Reaches mid-back. Soft curls, not perfectly straight. Luminous green like forest leaves in sunlight -- this is her identity color. Frames face gently. A few strands fall across forehead near the Anima diamond. Hair moves softly as if in a gentle breeze. The green hair matches her coat and healing glow, creating a unified verdant identity.
-- **Eyes:** Cyan (#40E0FF), large and warm. Softer glow than others -- more gentle luminance. Expressive, kind. Slight upward curve to eyebrows (compassionate resting expression).
-- **Face:** Soft, rounded features. Warm expression. Gentle smile with lips slightly parted. The kindest face of the four. Small beauty mark below left eye (a deliberate design choice -- Dr. Mori had one).
-- **Build:** Medium frame. Graceful, balanced proportions. Neither bulky nor frail. Moves with careful precision (surgeon's hands).
-- **Height reference:** Second shortest, slightly taller than Rex.
+- **Hair:** Long, wavy, elf green (#66CC88). Reaches mid-back. Soft curls. Luminous green like forest leaves in sunlight. THIS IS HER IDENTITY COLOR. Matches coat and healing glow.
+- **Eyes:** Cyan (#40E0FF), large and warm. Softer glow. Expressive, kind.
+- **Face:** Soft, rounded. Gentle smile. Beauty mark below left eye.
+- **Build:** Medium, graceful. Second shortest (slightly taller than Rex).
 
-**Equipment Design:**
-- **Uniform:** White medical uniform (#E6E0F0) as the base -- collared, buttoned, clean. Over this, an emerald green (#55CC66) tactical long coat that reaches mid-thigh. The coat has the green cross emblem (#FFFFFF cross on #55CC66 circle) on the left breast pocket. Coat is open in front, showing the white uniform beneath. Coat has utility pockets on both sides.
-- **Medical cross:** The white cross on green circle appears on: left breast of coat, left shoulder armband, and on the medical satchel. This is her consistent marking across all art types.
-- **Sidearm:** Compact energy pistol in right hand. Small, sleek, white with green accents. Clearly secondary to her role -- held loosely at side, not aimed.
-- **Healing glow:** Left hand emits a soft emerald green aura (#55CC66 at 50% opacity). The glow radiates 5-10cm from the palm and fingertips. Small floating particles of light in the aura. This is her most visually distinctive feature.
-- **Medical satchel:** Cross-body bag at right hip. Tan/brown leather with the green cross. Slightly open, showing bandages and vials inside.
-- **Boots:** Low, practical, white with green trim. Not armored. Medical-grade clean.
+**Equipment (MUST be visible in ALL art):**
+- **Healing Glow (LEFT HAND, PRIMARY):** Soft emerald green aura from palm and fingertips. Floating light particles. THIS IS HER MOST DISTINCTIVE FEATURE.
+- **Energy Pistol (RIGHT HAND):** Compact, sleek, white with green accents. Held loosely at side, not aimed. Secondary weapon.
+- **Coat:** Emerald green (#55CC66) tactical long coat over white medical uniform. Green cross emblem (#FFFFFF cross on #55CC66 circle) on left breast.
+- **Medical Cross:** Appears on: coat breast, left shoulder armband, medical satchel. Consistent across all art.
+- **Medical Satchel:** Cross-body bag at right hip. Tan leather with green cross.
 
-**Silhouette Test:** Identifiable by: flowing coat outline, healing glow from one hand, satchel at hip, wavy hair, gentle posture.
+**Silhouette Test:** Flowing coat + healing glow from hand + satchel + wavy hair.
 
 ---
 
 ### HANA -- Architect Unit 04
 
-**Anima Origin:** Patterned after Mei Zhang, a structural engineer who designed and personally built the emergency shelters that housed 3,000 survivors during the first winter after the Fall. She worked until her hands bled, then kept working. Her neural pattern produces an Anima with boundless energy, practical creativity, and the belief that any problem can be solved with the right tool and enough stubbornness.
-
-**Personality Traits (visible in art):** Confident, energetic, resourceful, slightly cocky. Stands with weight shifted, one hand on hip or gesturing. Grin, not a smile -- she's having fun. Looks like she just figured out how to fix everything. Most animated of the four.
+**Anima Origin:** Patterned after Mei Zhang, structural engineer who built emergency shelters housing 3,000 survivors during the first winter after the Fall.
 
 **Physical Design:**
-- **Hair:** Dark blackish-brown (#3A2820), almost black with warm brown highlights (#5C4030) in light. Pulled back in a practical high ponytail. Bangs across forehead, slightly messy. Ponytail is thick, reaches mid-back, has a slight curl at the end. A few loose strands escape the tie. The dark hair contrasts with her bright blue jumpsuit and amber goggles.
-- **Eyes:** Cyan (#40E0FF), bright and inquisitive. Wide, alert, always looking at something with interest. Slight spark of mischief.
-- **Face:** Approachable, rounded but defined features. Confident grin showing teeth. Slight smudge of grease on right cheek (she never cleans up). Eyebrows slightly raised -- perpetually interested expression.
-- **Build:** Athletic, practical. Medium height, strong arms (builder's frame). Rolled-up sleeves showing forearm chassis joints. Most visibly "working" posture of the four.
-- **Height reference:** Second tallest, between Aurora and Lily.
+- **Hair:** Dark blackish-brown (#3A2820), almost black with warm highlights (#5C4030) in light. High ponytail, thick. Bangs across forehead. Contrasts with bright blue jumpsuit.
+- **Eyes:** Cyan (#40E0FF), bright and inquisitive. Spark of mischief.
+- **Face:** Approachable, confident grin showing teeth. Grease smudge on right cheek.
+- **Build:** Athletic, medium height. Strong arms (builder's frame). Rolled-up sleeves exposing forearm chassis.
 
-**Equipment Design:**
-- **Jumpsuit:** Cobalt blue (#5599DD) engineer's jumpsuit. Full-body, zippered front, collar. Sleeves rolled up to elbows, exposing white chassis forearms. Reinforced knee pads (darker cobalt #336699). Several pockets on thighs and chest, some bulging with tools.
-- **Goggles:** Pushed up on forehead, resting above hairline. Round lenses with amber/yellow tint (#CCAA33). Elastic strap is dark brown. The goggles are as iconic to Hana as the visor is to Aurora. They sit right above the Anima diamond.
-- **Tool belt:** Wide brown leather belt (#8B6640) slung slightly low on hips. Loaded with: adjustable wrench, pliers, coil of wire, small hammer, measuring tape, and several unidentifiable gadgets. The belt jangles -- it's overstuffed.
-- **Wrench:** Oversized mechanical wrench in right hand. Not a standard wrench -- it's a hybrid wrench/hammer with a reinforced head that doubles as a melee weapon. Length: from her hand to the ground when held at side. Color: brushed steel (#A0A0B0) with cobalt blue grip wrapping.
-- **Pistol:** Standard-issue sidearm in a hip holster on left side. Dark gunmetal. Functional, not fancy.
-- **Boots:** Heavy-duty cobalt work boots. Steel toe. Scuffed and worn. Practical.
+**Equipment (MUST be visible in ALL art):**
+- **Wrench (RIGHT HAND, DOMINANT):** Oversized mechanical wrench/hammer hybrid. From her hand to the ground when held at side. Brushed steel (#A0A0B0) with cobalt blue grip. Doubles as melee weapon.
+- **Pistol (LEFT HIP):** Standard-issue sidearm in hip holster. Dark gunmetal. Her ranged weapon.
+- **Goggles:** Pushed up on forehead above Anima diamond. Round amber lenses (#CCAA33). As iconic as Aurora's visor.
+- **Jumpsuit:** Cobalt blue (#5599DD). Zippered front. Sleeves rolled to elbows. Reinforced knee pads.
+- **Tool Belt:** Wide brown leather (#8B6640). Overstuffed: wrench, pliers, wire, hammer, measuring tape.
 
-**Silhouette Test:** Identifiable by: oversized wrench extending downward, goggles on head, ponytail, tool belt bulk, casual stance.
+**Silhouette Test:** Oversized wrench extending down + goggles on head + ponytail + tool belt bulk.
 
 ---
 
@@ -171,81 +186,106 @@ All ARIA units share these design elements to visually unify them as products of
 
 ### ZOMBIE (Irradiated Mutant)
 
-These are not classic undead -- they are living creatures mutated by solar radiation. Former animals (and some former humans) whose DNA was rewritten by the eleven-day bombardment. They are driven purely by hunger. Visually, they follow the same anime art style as ARIA units -- stylized, not realistic horror. Think anime monster design, not Walking Dead.
+Mutated living creatures, not classic undead. **Same anime art style as ARIA** -- stylized, not realistic horror. Think Dragon Quest monsters or Bleach hollows. Threatening but not disturbing.
 
 **Physical Design:**
-- **Skin:** Pale lavender-gray (#998899), smooth anime-style rendering. Not mottled or gore-textured. Clean enough to fit the anime aesthetic. Slight purple undertone suggests radiation mutation.
-- **Eyes:** Glowing soft red (#FF6666). Round, large anime-style eyes but with a vacant hungry look. Single pair (not multiple -- keep it clean). The glow is the main threat indicator.
-- **Mouth:** Slightly too wide, showing pointed teeth in an anime fang style. Not grotesque -- more "cute-menacing" like a chibi monster. Dark interior.
-- **Body:** Humanoid, slightly hunched. One arm slightly longer (subtle asymmetry, not extreme). Torn remnants of pre-apocalypse clothing (faded purple-brown rags #665555). Visible cracks/veins on skin in a stylized pattern (not realistic gore). Some bandage wrappings on arms/legs.
-- **Hair:** Messy, stringy, dark desaturated purple (#554455). Unkempt but still reads as anime hair, not realistic matted hair.
-- **Movement:** Shambling, arms reaching forward. Tilted head. Lurching but with anime-proportioned limbs.
-- **Size:** Similar to ARIA units but hunched, so appears shorter.
-- **Overall tone:** Anime monster, not horror monster. Should look threatening but not disturbing. Think Slime from Dragon Quest or hollows from Bleach -- stylized enemies that fit in an anime world.
-
-**Visual distinction from ARIA:** Zombies must be immediately distinguishable from ARIA. Key differences: desaturated palette (ARIA have vivid colors), red eyes (not cyan), no glowing cyan elements, vacant expression (ARIA have personality), hunched posture (ARIA stand upright), ragged clothing (ARIA have clean armor/uniforms).
+- **Skin:** Pale lavender-gray (#998899). Smooth anime rendering, not gore-textured. Slight purple undertone.
+- **Eyes:** Glowing soft red (#FF6666). Large anime-style but vacant/hungry. Single pair.
+- **Mouth:** Slightly too wide. Anime fangs. "Cute-menacing" not grotesque.
+- **Hair:** Messy, stringy, dark desaturated purple (#554455). Anime hair, not realistic.
+- **Body:** Slightly hunched, one arm subtly longer. Torn faded purple-brown rags (#665555). Stylized crack patterns (not gore). Bandage wrappings.
+- **Tone:** Anime monster. Threatening but fits the anime world.
 
 ---
 
 ## 4. Asset Manifest
 
-### Backgrounds (displayed at native resolution, overlaid with semi-transparent dark filter)
+**Total: 25 assets** (20 core + 5 map/structures)
 
-| # | Filename | Resolution | Description |
-|---|----------|-----------|-------------|
-| 1 | `bg_lore.png` | 1920x1080 | Lore intro screen. Ruined civilization, irradiated orange sky, silhouettes of crumbling skyscrapers, desolate wasteland foreground, no characters, dark and somber, faint toxic haze, crepuscular rays through dust. Mood: loss, desolation, the world that was. |
-| 2 | `bg_briefing.png` | 1920x1080 | Pre-combat briefing. Zombie horde approaching from distance, dozens of silhouettes with glowing red eyes in green fog, Duskwall fortification wall visible at bottom/foreground, dramatic dark sky, sense of impending siege. Mood: menace, urgency, the threat ahead. |
+### Backgrounds
 
-### Portraits (displayed in briefing cards, 512x768 each)
-
-| # | Filename | Resolution | Description |
-|---|----------|-----------|-------------|
-| 3 | `rex_portrait.png` | 512x768 | Upper body portrait. Rex facing slightly left, shield visible on left edge, sword handle at bottom right. Dramatic side lighting from left (warm orange) casting shadows right. Post-apocalyptic ruins in background, out of focus. Red scarf catches the light. Expression: determined, ready. Eye glow prominent. |
-| 4 | `aurora_portrait.png` | 512x768 | Upper body portrait. Aurora facing slightly right, rifle barrel extending past top of frame. Cool blue backlighting, visor data readout glowing. Sniper's perch backdrop (elevated ruins) out of focus. Expression: cold, calculating. Hair flowing. |
-| 5 | `lily_portrait.png` | 512x768 | Upper body portrait. Lily facing center, slight turn to left. Healing glow from left hand illuminating her face from below (green accent lighting). Medical satchel strap crossing chest. Duskwall medical bay in background, out of focus. Expression: gentle, compassionate, warm smile. |
-| 6 | `hana_portrait.png` | 512x768 | Upper body portrait. Hana facing slightly left, wrench resting on right shoulder. Goggles pushed up, reflecting orange light. Workshop/forge in background, out of focus, sparks. Expression: confident grin, energetic. Grease smudge on cheek. |
-
-### In-Game Sprites -- Alive (generated at 512x512, downscaled to 48x48 with NEAREST neighbor)
+Generate at **512x288** (16:9 within SD 1.5 range), then upscale to **1920x1080** via Real-ESRGAN or Lanczos.
 
 | # | Filename | Gen Size | Final Size | Description |
 |---|----------|----------|-----------|-------------|
-| 7 | `rex_sprite.png` | 512x512 | 48x48 | Chibi Rex. Full body, standing battle-ready. Shield on left, sword on right. Red scarf trailing. Wide stance. White/solid background for removal. |
-| 8 | `aurora_sprite.png` | 512x512 | 48x48 | Chibi Aurora. Full body, standing. Rifle held diagonally or resting on shoulder. Visor visible. Hair flowing. White/solid background. |
-| 9 | `lily_sprite.png` | 512x512 | 48x48 | Chibi Lily. Full body, standing. Healing glow from left hand. Pistol in right hand at side. Coat visible. White/solid background. |
-| 10 | `hana_sprite.png` | 512x512 | 48x48 | Chibi Hana. Full body, standing. Wrench in right hand resting on shoulder. Goggles on forehead. Tool belt visible. White/solid background. |
+| 1 | `bg_lore.png` | 512x288 | 1920x1080 | Ruined civilization. Irradiated orange sky, crumbling skyscraper silhouettes, desolate wasteland, toxic haze, no characters. Dark and somber. Will be overlaid with 50% black filter. |
+| 2 | `bg_briefing.png` | 512x288 | 1920x1080 | Zombie horde approaching. Dozens of silhouettes with glowing red eyes in green fog. Duskwall wall at bottom. Dark sky. Menacing. Will be overlaid with 50% black filter. |
 
-### In-Game Sprites -- Dead (generated at 512x512, downscaled to 48x48)
+### Portraits (briefing cards)
 
 | # | Filename | Gen Size | Final Size | Description |
 |---|----------|----------|-----------|-------------|
-| 11 | `rex_dead.png` | 512x512 | 48x48 | Chibi Rex fallen. Lying on side. Shield cracked, sword dropped nearby. Armor broken, scarf torn. Forehead diamond dark. Eyes dim/closed. Sparks from joints. White/solid background. |
-| 12 | `aurora_dead.png` | 512x512 | 48x48 | Chibi Aurora fallen. Collapsed forward over rifle. Visor cracked/dark. Hair splayed. Armor cracked. Forehead diamond dark. Eyes dim/closed. White/solid background. |
-| 13 | `lily_dead.png` | 512x512 | 48x48 | Chibi Lily fallen. Lying on back. Coat spread around her. No healing glow. Pistol dropped. Satchel spilled open. Forehead diamond dark. Eyes dim/closed. White/solid background. |
-| 14 | `hana_dead.png` | 512x512 | 48x48 | Chibi Hana fallen. Slumped against invisible wall. Wrench dropped. Goggles cracked, fallen beside her. Tools scattered. Forehead diamond dark. Eyes dim/closed. White/solid background. |
+| 3 | `rex_portrait.png` | 512x768 | 512x768 | Upper body. Shield on left edge, sword handle at bottom right. Orange side lighting. Ruins background blurred. Reddish-pink scarf catches light. |
+| 4 | `aurora_portrait.png` | 512x768 | 512x768 | Upper body. Rifle barrel past top of frame. Blue backlighting. Visor glowing. Ruins perch background blurred. Golden hair flowing. |
+| 5 | `lily_portrait.png` | 512x768 | 512x768 | Upper body. Healing glow from left hand lighting face green. Pistol at side. Medical satchel strap. Medical bay background blurred. Warm smile. |
+| 6 | `hana_portrait.png` | 512x768 | 512x768 | Upper body. Wrench on right shoulder. Goggles reflecting light. Pistol holster visible. Workshop/sparks background blurred. Confident grin. |
 
-### Death Splash Art (full-screen popup, displayed for 3-5 seconds when ARIA is destroyed)
+### In-Game Sprites -- Alive
 
-| # | Filename | Resolution | Description |
-|---|----------|-----------|-------------|
-| 15 | `rex_death_splash.png` | 1024x576 | Rex falling backward, reaching one hand toward camera/viewer. Shield shattered into pieces behind her. Sword falling from other hand. Scarf unfurling in slow-motion. Behind her: multiple zombies (3-5) emerging from green fog with glowing red eyes. Dark stormy sky. Sparks and debris. Her Anima diamond is cracking, cyan light leaking out. Expression: defiant even in death, teeth gritted. Dramatic upward camera angle. |
-| 16 | `aurora_death_splash.png` | 1024x576 | Aurora collapsing sideways, rifle falling from hands. Visor shattered, both cyan eyes visible and dimming. Hair sweeping in an arc. Behind her: zombie silhouettes in fog, red eyes. Her last shot: a muzzle flash visible from rifle barrel, one zombie hit and falling. Even dying, she took one more. Expression: pain but satisfaction. Side view composition. |
-| 17 | `lily_death_splash.png` | 1024x576 | Lily on her knees, reaching forward with both hands, healing glow fading from her palms. She died trying to save someone. Satchel spilled, medical supplies scattered. Behind her: zombies closing in from the darkness, red eyes in fog. Green healing particles dissolving into the air. Expression: sorrowful, desperate, refusing to stop healing. Front-facing composition. Most emotionally devastating of the four. |
-| 18 | `hana_death_splash.png` | 1024x576 | Hana collapsed against a barricade she just finished building. The barricade stands strong even as she doesn't. Wrench still in hand, grip loosening. Goggles pushed up, eyes dimming. Behind her: zombies clawing at the barricade but unable to pass -- her final build holds. Expression: tired smile, satisfied that her work will protect the others. Behind the barricade: faint silhouettes of the other ARIA units still fighting. |
-
-### Enemies & Structures (generated at 512x512, downscaled)
+Generate at **384x384** (384/128 = 3x clean downscale ratio), downscale to **128x128**.
 
 | # | Filename | Gen Size | Final Size | Description |
 |---|----------|----------|-----------|-------------|
-| 19 | `zombie_sprite.png` | 512x512 | 32x32 | Chibi zombie. Same chibi proportions as ARIA (big head, small body) but grotesque. Big glowing red eyes, distended jaw, gray-green skin, torn brown rags, one arm reaching forward. Shambling stance. White/solid background. |
-| 20 | `base.png` | 512x512 | 64x64 | Chibi-style fortified bunker. Top-down-ish angle. Metal walls, antenna, reinforced door, warm orange light from windows, Duskwall crest on front. Sandbags around base. White/solid background. |
+| 7 | `rex_sprite.png` | 384x384 | 128x128 | Chibi Rex. BIG SHIELD on left, sword on right. Reddish-pink armor+scarf. Wide stance. NO GUN. Bright green background for chroma-key. |
+| 8 | `aurora_sprite.png` | 384x384 | 128x128 | Chibi Aurora. OVERSIZED RIFLE diagonal/on shoulder. Visor. Golden blonde hair. Bright green background. |
+| 9 | `lily_sprite.png` | 384x384 | 128x128 | Chibi Lily. HEALING GLOW left hand. Pistol right hand at side. Green coat, cross emblem. Elf green hair. Bright green background. |
+| 10 | `hana_sprite.png` | 384x384 | 128x128 | Chibi Hana. WRENCH on right shoulder. Pistol in left hip holster. Goggles on forehead. Dark brown ponytail. Bright green background. |
+
+### In-Game Sprites -- Dead
+
+Generate at **384x384**, downscale to **128x128**. Hair colors SAME as alive (desaturated by 30% in post-processing, not in prompt).
+
+| # | Filename | Gen Size | Final Size | Description |
+|---|----------|----------|-----------|-------------|
+| 11 | `rex_dead.png` | 384x384 | 128x128 | Chibi Rex fallen on side. Shield cracked, sword dropped. Reddish-pink armor broken. Scarf torn. Diamond dark. Eyes closed. Bright green background. |
+| 12 | `aurora_dead.png` | 384x384 | 128x128 | Chibi Aurora collapsed over broken rifle. Visor cracked. Golden hair splayed. Diamond dark. Eyes closed. Bright green background. |
+| 13 | `lily_dead.png` | 384x384 | 128x128 | Chibi Lily on back. Coat spread. No glow. Pistol dropped. Satchel spilled. Elf green hair spread. Diamond dark. Bright green background. |
+| 14 | `hana_dead.png` | 384x384 | 128x128 | Chibi Hana slumped. Wrench dropped. Goggles cracked beside her. Tools scattered. Dark brown hair loose. Diamond dark. Bright green background. |
+
+### Death Splash -- MVP Approach
+
+**NOT full AI-generated scene art.** Instead, use the existing portrait image with in-engine effects:
+1. Display portrait (512x768) with dark red tint overlay
+2. Particle effects: sparks, fading cyan diamonds
+3. Vignette border (dark edges)
+4. Text: "[Name] -- OFFLINE" at bottom
+5. Skip on click (prevents blocking gameplay)
+
+This approach is reliable, consistent, and avoids the hardest-to-generate images. Full scene death art is deferred to post-MVP polish.
+
+### Enemies
+
+| # | Filename | Gen Size | Final Size | Description |
+|---|----------|----------|-----------|-------------|
+| 15 | `zombie_sprite.png` | 384x384 | 96x96 | Chibi anime zombie. Pale lavender skin. Big red eyes, vacant. Anime fangs. Dark purple messy hair. Torn rags. Hunched, arms reaching. Bright green background. |
+
+### Structures
+
+| # | Filename | Gen Size | Final Size | Description |
+|---|----------|----------|-----------|-------------|
+| 16 | `base.png` | 384x384 | 128x128 | Fortified bunker. Metal walls, antenna, reinforced door, warm orange window light. Sandbags. Duskwall crest. Slight top-down angle. Bright green background. |
+| 17 | `wall.png` | 384x384 | 64x64 | Metal barricade wall segment. Corrugated steel, rivets, rust patches. Vertical. Bright green background. |
+| 18 | `barricade.png` | 384x384 | 64x64 | Sandbags + scrap metal low barrier. Stacked sandbags with metal scrap on top. Bright green background. |
+
+### Map Tiles
+
+Generate at **256x256**, downscale to **64x64** (4x clean ratio).
+
+| # | Filename | Gen Size | Final Size | Description |
+|---|----------|----------|-----------|-------------|
+| 19 | `tile_dirt.png` | 256x256 | 64x64 | Cracked dry brown ground. Tileable. No characters/objects. |
+| 20 | `tile_dead_grass.png` | 256x256 | 64x64 | Dirt with sparse yellowed grass tufts. Tileable. |
+| 21 | `tile_rubble.png` | 256x256 | 64x64 | Small rocks and concrete debris on dirt. Tileable. |
+| 22 | `tile_road.png` | 256x256 | 64x64 | Cracked dark gray asphalt. Faded markings. Tileable. |
+| 23 | `tile_rust.png` | 256x256 | 64x64 | Ground with embedded rusted metal scraps. Tileable. |
+| 24 | `tile_bridge.png` | 256x256 | 64x64 | Weathered wooden planks. Rope/nail details. Tileable. |
+| 25 | `tile_dead_tree.png` | 256x256 | 64x64 | Leafless trunk with bare branches. Decorative overlay. Transparent bg. |
 
 ---
 
 ## 5. Style Consistency Tags
 
-These tag blocks MUST be prepended to every prompt to ensure visual consistency across all 20 assets.
-
-### Tag Block A: Realistic Anime (portraits, backgrounds, death splashes)
+### Tag Block A: Realistic Anime (portraits, backgrounds)
 
 ```
 masterpiece, best quality, ultra detailed,
@@ -254,17 +294,19 @@ cinematic lighting, dramatic atmosphere, depth of field,
 highly detailed face, beautiful detailed eyes,
 ```
 
-### Tag Block B: Chibi Sprites (in-game sprites, dead sprites, enemy, base)
+### Tag Block B: Chibi Sprites (all in-game sprites, enemy, structures)
 
 ```
 masterpiece, best quality, chibi, game sprite,
 cute, super deformed, big head, big eyes, small body,
-full body, standing, solid white background,
-simple clean background, single character,
-pixel art style, game asset,
+full body, single character,
+game asset,
 ```
 
-### Tag Block C: ARIA Shared Features (append to every ARIA prompt)
+Note: Use "solid bright green background" (NOT white) for chroma-key removal.
+Note: Do NOT include "big head, big eyes" for structure/building assets.
+
+### Tag Block C: ARIA Shared Features (every ARIA prompt)
 
 ```
 feminine android, white silver chassis at joints,
@@ -273,7 +315,7 @@ cyan glowing eyes, pale luminous skin,
 subtle panel lines on skin,
 ```
 
-### Tag Block D: Negative Prompt (use for ALL images)
+### Tag Block D: Negative Prompt (ALL images)
 
 ```
 bad anatomy, bad hands, missing fingers, extra fingers, extra digit,
@@ -288,61 +330,51 @@ male, masculine, boy, man,
 jpeg artifacts, error,
 ```
 
+**IMPORTANT:** In all prompt templates below, "[Tag Block D]" means copy-paste the full text above. ComfyUI does not support macros.
+
 ---
 
 ## 6. Generation Parameters
 
 ### ComfyUI Sampler Settings
 
-| Parameter | Portraits | Sprites | Death Splash | Backgrounds |
-|-----------|-----------|---------|-------------|-------------|
-| **Model** | anything-v5.safetensors | anything-v5.safetensors | anything-v5.safetensors | anything-v5.safetensors |
+| Parameter | Portraits | Sprites (384) | Backgrounds (512x288) | Tiles (256) |
+|-----------|-----------|--------------|----------------------|-------------|
+| **Model** | anything-v5 | anything-v5 | anything-v5 | anything-v5 |
 | **Sampler** | euler_ancestral | euler_ancestral | euler_ancestral | euler_ancestral |
 | **Scheduler** | normal | normal | normal | normal |
-| **Steps** | 30 | 25 | 35 | 30 |
-| **CFG scale** | 7.5 | 7.0 | 8.0 | 7.5 |
-| **Width** | 512 | 512 | 1024 | 1920 |
-| **Height** | 768 | 512 | 576 | 1080 |
-| **Denoise** | 1.0 | 1.0 | 1.0 | 1.0 |
+| **Steps** | 30 | 25 | 30 | 20 |
+| **CFG** | 7.5 | 7.0 | 7.5 | 7.0 |
+| **Width** | 512 | 384 | 512 | 256 |
+| **Height** | 768 | 384 | 288 | 256 |
 
 ### Seed Registry
 
-Fixed seeds ensure reproducibility. If regenerating, use these exact seeds.
-
-| Asset | Seed |
-|-------|------|
-| bg_lore | 5001 |
-| bg_briefing | 5002 |
-| rex_portrait | 1001 |
-| aurora_portrait | 1002 |
-| lily_portrait | 1003 |
-| hana_portrait | 1004 |
-| rex_sprite | 2001 |
-| aurora_sprite | 2002 |
-| lily_sprite | 2003 |
-| hana_sprite | 2004 |
-| rex_dead | 3001 |
-| aurora_dead | 3002 |
-| lily_dead | 3003 |
-| hana_dead | 3004 |
-| rex_death_splash | 4001 |
-| aurora_death_splash | 4002 |
-| lily_death_splash | 4003 |
-| hana_death_splash | 4004 |
-| zombie_sprite | 6001 |
-| base_sprite | 7001 |
+| Asset | Seed | Asset | Seed |
+|-------|------|-------|------|
+| bg_lore | 5001 | rex_dead | 3001 |
+| bg_briefing | 5002 | aurora_dead | 3002 |
+| rex_portrait | 1001 | lily_dead | 3003 |
+| aurora_portrait | 1002 | hana_dead | 3004 |
+| lily_portrait | 1003 | zombie_sprite | 6001 |
+| hana_portrait | 1004 | base | 7001 |
+| rex_sprite | 2001 | wall | 7002 |
+| aurora_sprite | 2002 | barricade | 7003 |
+| lily_sprite | 2003 | tile_dirt | 8001 |
+| hana_sprite | 2004 | tile_dead_grass | 8002 |
+| | | tile_rubble | 8003 |
+| | | tile_road | 8004 |
+| | | tile_rust | 8005 |
+| | | tile_bridge | 8006 |
+| | | tile_dead_tree | 8007 |
 
 ---
 
 ## 7. Prompt Templates
 
-Each prompt is constructed as: `[Tag Block A or B] + [Tag Block C if ARIA] + [Character-specific prompt]`
-
-Negative prompt is always Tag Block D.
-
 ### 7.1 Backgrounds
 
-**bg_lore.png** (Seed: 5001, 1920x1080, 30 steps, CFG 7.5)
+**bg_lore.png** (512x288, 30 steps, CFG 7.5, Seed 5001)
 ```
 Prompt:
 masterpiece, best quality, ultra detailed,
@@ -359,10 +391,10 @@ dark somber mood, loss and desolation,
 muted colors with orange and brown dominant,
 
 Negative:
-[Tag Block D], people, characters, anime girl, bright colors, happy, cheerful, green vegetation, blue sky, clean
+bad anatomy, bad hands, missing fingers, extra fingers, extra digit, fewer digits, blurry, low quality, worst quality, normal quality, watermark, text, signature, username, artist name, cropped, out of frame, deformed, disfigured, ugly, duplicate, morbid, mutilated, poorly drawn face, poorly drawn hands, extra arms, extra legs, fused fingers, too many fingers, long neck, multiple characters, 2girls, multiple views, split screen, male, masculine, boy, man, jpeg artifacts, error, people, characters, anime girl, bright colors, happy, cheerful, green vegetation, blue sky, clean
 ```
 
-**bg_briefing.png** (Seed: 5002, 1920x1080, 30 steps, CFG 7.5)
+**bg_briefing.png** (512x288, 30 steps, CFG 7.5, Seed 5002)
 ```
 Prompt:
 masterpiece, best quality, ultra detailed,
@@ -376,15 +408,15 @@ dramatic dark sky with ominous clouds,
 sense of impending siege and menace,
 red eyes piercing through darkness and fog,
 dark oppressive atmosphere, no characters in foreground,
-horror atmosphere, dread, approaching doom,
+dark fantasy atmosphere, dread, approaching doom,
 
 Negative:
-[Tag Block D], people, anime girl, bright colors, happy, cheerful, blue sky, daylight, clean
+bad anatomy, bad hands, missing fingers, extra fingers, extra digit, fewer digits, blurry, low quality, worst quality, normal quality, watermark, text, signature, username, artist name, cropped, out of frame, deformed, disfigured, ugly, duplicate, morbid, mutilated, poorly drawn face, poorly drawn hands, extra arms, extra legs, fused fingers, too many fingers, long neck, multiple characters, 2girls, multiple views, split screen, male, masculine, boy, man, jpeg artifacts, error, people, anime girl, bright colors, happy, cheerful, blue sky, daylight, clean
 ```
 
 ### 7.2 Portraits
 
-**rex_portrait.png** (Seed: 1001, 512x768, 30 steps, CFG 7.5)
+**rex_portrait.png** (512x768, 30 steps, CFG 7.5, Seed 1001)
 ```
 Prompt:
 masterpiece, best quality, ultra detailed,
@@ -401,19 +433,19 @@ sharp intense cyan glowing eyes,
 heavy reddish pink plate armor, layered pauldrons,
 chest plate with shield crest engraving,
 battle damaged scratched dented armor,
-tower shield visible on left edge of frame,
+large tower shield visible on left edge of frame,
 broad sword handle visible at bottom right,
-reddish pink tattereddish pink scarf around neck trailing behind,
+tattered reddish pink scarf around neck trailing behind,
 strong determined protective expression,
 dramatic warm orange side lighting from left,
 post-apocalyptic ruined city background blurred,
 looking at viewer,
 
 Negative:
-[Tag Block D]
+bad anatomy, bad hands, missing fingers, extra fingers, extra digit, fewer digits, blurry, low quality, worst quality, normal quality, watermark, text, signature, username, artist name, cropped, out of frame, deformed, disfigured, ugly, duplicate, morbid, mutilated, poorly drawn face, poorly drawn hands, extra arms, extra legs, fused fingers, too many fingers, long neck, multiple characters, 2girls, multiple views, split screen, male, masculine, boy, man, jpeg artifacts, error, gun, firearm, rifle, pistol
 ```
 
-**aurora_portrait.png** (Seed: 1002, 512x768, 30 steps, CFG 7.5)
+**aurora_portrait.png** (512x768, 30 steps, CFG 7.5, Seed 1002)
 ```
 Prompt:
 masterpiece, best quality, ultra detailed,
@@ -425,7 +457,7 @@ small glowing cyan diamond on forehead,
 cyan glowing eyes, pale luminous skin,
 subtle panel lines on skin,
 1girl, upper body portrait,
-long straight platinum blonde hair flowing,
+long straight golden blonde hair flowing,
 cyan glowing eyes, red targeting monocle visor over right eye,
 visor data readout visible on lens,
 lightweight gold amber recon armor, form fitting,
@@ -437,10 +469,10 @@ elevated ruins sniper perch background blurred,
 looking at viewer slightly to right,
 
 Negative:
-[Tag Block D]
+bad anatomy, bad hands, missing fingers, extra fingers, extra digit, fewer digits, blurry, low quality, worst quality, normal quality, watermark, text, signature, username, artist name, cropped, out of frame, deformed, disfigured, ugly, duplicate, morbid, mutilated, poorly drawn face, poorly drawn hands, extra arms, extra legs, fused fingers, too many fingers, long neck, multiple characters, 2girls, multiple views, split screen, male, masculine, boy, man, jpeg artifacts, error
 ```
 
-**lily_portrait.png** (Seed: 1003, 512x768, 30 steps, CFG 7.5)
+**lily_portrait.png** (512x768, 30 steps, CFG 7.5, Seed 1003)
 ```
 Prompt:
 masterpiece, best quality, ultra detailed,
@@ -456,6 +488,7 @@ long wavy elf green hair flowing softly,
 warm gentle cyan glowing eyes,
 white medical uniform, emerald green tactical long coat,
 green cross emblem on left breast,
+compact energy pistol in right hand at side,
 medical satchel strap crossing chest,
 soft green healing glow from left hand illuminating face,
 green light particles floating,
@@ -465,10 +498,10 @@ medical bay background blurred,
 looking at viewer,
 
 Negative:
-[Tag Block D]
+bad anatomy, bad hands, missing fingers, extra fingers, extra digit, fewer digits, blurry, low quality, worst quality, normal quality, watermark, text, signature, username, artist name, cropped, out of frame, deformed, disfigured, ugly, duplicate, morbid, mutilated, poorly drawn face, poorly drawn hands, extra arms, extra legs, fused fingers, too many fingers, long neck, multiple characters, 2girls, multiple views, split screen, male, masculine, boy, man, jpeg artifacts, error
 ```
 
-**hana_portrait.png** (Seed: 1004, 512x768, 30 steps, CFG 7.5)
+**hana_portrait.png** (512x768, 30 steps, CFG 7.5, Seed 1004)
 ```
 Prompt:
 masterpiece, best quality, ultra detailed,
@@ -485,6 +518,7 @@ bright inquisitive cyan glowing eyes,
 cobalt blue engineer jumpsuit, rolled up sleeves,
 amber goggles pushed up on forehead,
 oversized mechanical wrench resting on right shoulder,
+pistol in holster on left hip,
 loaded brown leather tool belt,
 confident energetic grin showing teeth,
 grease smudge on right cheek,
@@ -492,19 +526,18 @@ workshop forge background with sparks blurred,
 looking at viewer,
 
 Negative:
-[Tag Block D]
+bad anatomy, bad hands, missing fingers, extra fingers, extra digit, fewer digits, blurry, low quality, worst quality, normal quality, watermark, text, signature, username, artist name, cropped, out of frame, deformed, disfigured, ugly, duplicate, morbid, mutilated, poorly drawn face, poorly drawn hands, extra arms, extra legs, fused fingers, too many fingers, long neck, multiple characters, 2girls, multiple views, split screen, male, masculine, boy, man, jpeg artifacts, error
 ```
 
 ### 7.3 In-Game Sprites (Alive)
 
-**rex_sprite.png** (Seed: 2001, 512x512, 25 steps, CFG 7.0)
+**rex_sprite.png** (384x384, 25 steps, CFG 7.0, Seed 2001)
 ```
 Prompt:
 masterpiece, best quality, chibi, game sprite,
 cute, super deformed, big head, big eyes, small body,
-full body, standing, solid white background,
-simple clean background, single character,
-pixel art style, game asset,
+full body, single character, game asset,
+solid bright green background,
 feminine android, white silver chassis at joints,
 small glowing cyan diamond on forehead,
 cyan glowing eyes, pale luminous skin,
@@ -513,27 +546,26 @@ short choppy reddish pink hair,
 big cute cyan glowing eyes, determined expression, blush,
 heavy reddish pink plate armor, large pauldrons,
 oversized tower shield in left hand,
-broad sword with cyan edge in right hand,
-reddish pink tattereddish pink scarf trailing behind,
-wide battle stance,
+broad sword with cyan glowing edge in right hand,
+tattered reddish pink scarf trailing behind,
+wide battle stance, no gun, no firearm,
 
 Negative:
-[Tag Block D], detailed background, scenery
+bad anatomy, bad hands, missing fingers, extra fingers, extra digit, fewer digits, blurry, low quality, worst quality, normal quality, watermark, text, signature, username, artist name, cropped, out of frame, deformed, disfigured, ugly, duplicate, morbid, mutilated, poorly drawn face, poorly drawn hands, extra arms, extra legs, fused fingers, too many fingers, long neck, multiple characters, 2girls, multiple views, split screen, male, masculine, boy, man, jpeg artifacts, error, detailed background, scenery, gun, pistol, rifle, firearm
 ```
 
-**aurora_sprite.png** (Seed: 2002, 512x512, 25 steps, CFG 7.0)
+**aurora_sprite.png** (384x384, 25 steps, CFG 7.0, Seed 2002)
 ```
 Prompt:
 masterpiece, best quality, chibi, game sprite,
 cute, super deformed, big head, big eyes, small body,
-full body, standing, solid white background,
-simple clean background, single character,
-pixel art style, game asset,
+full body, single character, game asset,
+solid bright green background,
 feminine android, white silver chassis at joints,
 small glowing cyan diamond on forehead,
 cyan glowing eyes, pale luminous skin,
 1girl chibi,
-long straight platinum blonde hair,
+long straight golden blonde hair,
 big cute cyan glowing eyes, focused expression, blush,
 red targeting visor over right eye,
 lightweight gold amber armor, dark bodysuit,
@@ -542,17 +574,16 @@ red glowing scope on rifle,
 elegant standing pose,
 
 Negative:
-[Tag Block D], detailed background, scenery
+bad anatomy, bad hands, missing fingers, extra fingers, extra digit, fewer digits, blurry, low quality, worst quality, normal quality, watermark, text, signature, username, artist name, cropped, out of frame, deformed, disfigured, ugly, duplicate, morbid, mutilated, poorly drawn face, poorly drawn hands, extra arms, extra legs, fused fingers, too many fingers, long neck, multiple characters, 2girls, multiple views, split screen, male, masculine, boy, man, jpeg artifacts, error, detailed background, scenery
 ```
 
-**lily_sprite.png** (Seed: 2003, 512x512, 25 steps, CFG 7.0)
+**lily_sprite.png** (384x384, 25 steps, CFG 7.0, Seed 2003)
 ```
 Prompt:
 masterpiece, best quality, chibi, game sprite,
 cute, super deformed, big head, big eyes, small body,
-full body, standing, solid white background,
-simple clean background, single character,
-pixel art style, game asset,
+full body, single character, game asset,
+solid bright green background,
 feminine android, white silver chassis at joints,
 small glowing cyan diamond on forehead,
 cyan glowing eyes, pale luminous skin,
@@ -561,22 +592,21 @@ long wavy elf green hair,
 big cute warm cyan glowing eyes, gentle smile, blush,
 white uniform, emerald green long coat, green cross emblem,
 soft green healing glow from left hand,
-compact pistol in right hand at side,
+compact energy pistol in right hand at side,
 medical satchel at hip,
 gentle standing pose,
 
 Negative:
-[Tag Block D], detailed background, scenery
+bad anatomy, bad hands, missing fingers, extra fingers, extra digit, fewer digits, blurry, low quality, worst quality, normal quality, watermark, text, signature, username, artist name, cropped, out of frame, deformed, disfigured, ugly, duplicate, morbid, mutilated, poorly drawn face, poorly drawn hands, extra arms, extra legs, fused fingers, too many fingers, long neck, multiple characters, 2girls, multiple views, split screen, male, masculine, boy, man, jpeg artifacts, error, detailed background, scenery
 ```
 
-**hana_sprite.png** (Seed: 2004, 512x512, 25 steps, CFG 7.0)
+**hana_sprite.png** (384x384, 25 steps, CFG 7.0, Seed 2004)
 ```
 Prompt:
 masterpiece, best quality, chibi, game sprite,
 cute, super deformed, big head, big eyes, small body,
-full body, standing, solid white background,
-simple clean background, single character,
-pixel art style, game asset,
+full body, single character, game asset,
+solid bright green background,
 feminine android, white silver chassis at joints,
 small glowing cyan diamond on forehead,
 cyan glowing eyes, pale luminous skin,
@@ -591,47 +621,47 @@ pistol in left hip holster,
 energetic standing pose,
 
 Negative:
-[Tag Block D], detailed background, scenery
+bad anatomy, bad hands, missing fingers, extra fingers, extra digit, fewer digits, blurry, low quality, worst quality, normal quality, watermark, text, signature, username, artist name, cropped, out of frame, deformed, disfigured, ugly, duplicate, morbid, mutilated, poorly drawn face, poorly drawn hands, extra arms, extra legs, fused fingers, too many fingers, long neck, multiple characters, 2girls, multiple views, split screen, male, masculine, boy, man, jpeg artifacts, error, detailed background, scenery
 ```
 
 ### 7.4 In-Game Sprites (Dead)
 
-**rex_dead.png** (Seed: 3001, 512x512, 25 steps, CFG 7.0)
+All dead sprites use the SAME hair color as alive versions. Desaturation is applied in post-processing, not in the prompt.
+
+**rex_dead.png** (384x384, 25 steps, CFG 7.0, Seed 3001)
 ```
 Prompt:
 masterpiece, best quality, chibi, game sprite,
 cute, super deformed, big head, big eyes, small body,
-full body, solid white background,
-simple clean background, single character,
-pixel art style, game asset,
+full body, single character, game asset,
+solid bright green background,
 feminine android, white silver chassis at joints,
 dark cracked diamond on forehead,
 1girl chibi,
-short dark brown hair with crimson tips, messy,
+short choppy reddish pink hair, messy,
 eyes closed, dimmed, offline expression,
-heavy crimson armor cracked and broken,
+heavy reddish pink armor cracked and broken,
 shattered tower shield pieces nearby,
 sword dropped on ground beside her,
-reddish pink scarf torn and limp,
+tattered reddish pink scarf torn and limp,
 lying on side, fallen pose,
 sparks from exposed joints, battle damage,
 
 Negative:
-[Tag Block D], detailed background, scenery, standing, happy, smiling, alive, glowing eyes
+bad anatomy, bad hands, missing fingers, extra fingers, extra digit, fewer digits, blurry, low quality, worst quality, normal quality, watermark, text, signature, username, artist name, cropped, out of frame, deformed, disfigured, ugly, duplicate, morbid, mutilated, poorly drawn face, poorly drawn hands, extra arms, extra legs, fused fingers, too many fingers, long neck, multiple characters, 2girls, multiple views, split screen, male, masculine, boy, man, jpeg artifacts, error, detailed background, scenery, standing, happy, smiling, alive, glowing eyes
 ```
 
-**aurora_dead.png** (Seed: 3002, 512x512, 25 steps, CFG 7.0)
+**aurora_dead.png** (384x384, 25 steps, CFG 7.0, Seed 3002)
 ```
 Prompt:
 masterpiece, best quality, chibi, game sprite,
 cute, super deformed, big head, big eyes, small body,
-full body, solid white background,
-simple clean background, single character,
-pixel art style, game asset,
+full body, single character, game asset,
+solid bright green background,
 feminine android, white silver chassis at joints,
 dark cracked diamond on forehead,
 1girl chibi,
-long platinum blonde hair splayed on ground,
+long golden blonde hair splayed on ground,
 eyes closed, dimmed, offline expression,
 gold amber armor cracked,
 visor shattered and dark,
@@ -640,17 +670,16 @@ fallen defeated pose,
 sparks from joints,
 
 Negative:
-[Tag Block D], detailed background, scenery, standing, happy, smiling, alive, glowing eyes
+bad anatomy, bad hands, missing fingers, extra fingers, extra digit, fewer digits, blurry, low quality, worst quality, normal quality, watermark, text, signature, username, artist name, cropped, out of frame, deformed, disfigured, ugly, duplicate, morbid, mutilated, poorly drawn face, poorly drawn hands, extra arms, extra legs, fused fingers, too many fingers, long neck, multiple characters, 2girls, multiple views, split screen, male, masculine, boy, man, jpeg artifacts, error, detailed background, scenery, standing, happy, smiling, alive, glowing eyes
 ```
 
-**lily_dead.png** (Seed: 3003, 512x512, 25 steps, CFG 7.0)
+**lily_dead.png** (384x384, 25 steps, CFG 7.0, Seed 3003)
 ```
 Prompt:
 masterpiece, best quality, chibi, game sprite,
 cute, super deformed, big head, big eyes, small body,
-full body, solid white background,
-simple clean background, single character,
-pixel art style, game asset,
+full body, single character, game asset,
+solid bright green background,
 feminine android, white silver chassis at joints,
 dark cracked diamond on forehead,
 1girl chibi,
@@ -663,17 +692,16 @@ medical satchel spilled open, bandages scattered,
 lying on back, fallen pose,
 
 Negative:
-[Tag Block D], detailed background, scenery, standing, happy, smiling, alive, glowing eyes, healing glow
+bad anatomy, bad hands, missing fingers, extra fingers, extra digit, fewer digits, blurry, low quality, worst quality, normal quality, watermark, text, signature, username, artist name, cropped, out of frame, deformed, disfigured, ugly, duplicate, morbid, mutilated, poorly drawn face, poorly drawn hands, extra arms, extra legs, fused fingers, too many fingers, long neck, multiple characters, 2girls, multiple views, split screen, male, masculine, boy, man, jpeg artifacts, error, detailed background, scenery, standing, happy, smiling, alive, glowing eyes, healing glow
 ```
 
-**hana_dead.png** (Seed: 3004, 512x512, 25 steps, CFG 7.0)
+**hana_dead.png** (384x384, 25 steps, CFG 7.0, Seed 3004)
 ```
 Prompt:
 masterpiece, best quality, chibi, game sprite,
 cute, super deformed, big head, big eyes, small body,
-full body, solid white background,
-simple clean background, single character,
-pixel art style, game asset,
+full body, single character, game asset,
+solid bright green background,
 feminine android, white silver chassis at joints,
 dark cracked diamond on forehead,
 1girl chibi,
@@ -686,132 +714,18 @@ tools scattered from broken belt,
 slumped sitting pose against invisible wall,
 
 Negative:
-[Tag Block D], detailed background, scenery, standing, happy, smiling, alive, glowing eyes
+bad anatomy, bad hands, missing fingers, extra fingers, extra digit, fewer digits, blurry, low quality, worst quality, normal quality, watermark, text, signature, username, artist name, cropped, out of frame, deformed, disfigured, ugly, duplicate, morbid, mutilated, poorly drawn face, poorly drawn hands, extra arms, extra legs, fused fingers, too many fingers, long neck, multiple characters, 2girls, multiple views, split screen, male, masculine, boy, man, jpeg artifacts, error, detailed background, scenery, standing, happy, smiling, alive, glowing eyes
 ```
 
-### 7.5 Death Splash Art
+### 7.5 Enemy & Structure Sprites
 
-**rex_death_splash.png** (Seed: 4001, 1024x576, 35 steps, CFG 8.0)
-```
-Prompt:
-masterpiece, best quality, ultra detailed,
-anime style, official art, league of legends splash art style,
-cinematic lighting, dramatic atmosphere, depth of field,
-highly detailed face, beautiful detailed eyes,
-feminine android, white silver chassis at joints,
-cracking cyan diamond on forehead leaking light,
-dimming cyan eyes,
-1girl,
-short choppy reddish pink hair,
-heavy reddish pink plate armor shattered and breaking,
-falling backward, reaching one hand toward viewer,
-tower shield shattering into pieces behind her,
-sword falling from other hand,
-reddish pink scarf unfurling in slow motion,
-defiant expression even in death, teeth gritted,
-3 to 5 zombies emerging from green fog behind her,
-zombies with glowing red eyes in darkness,
-dark stormy sky, debris and sparks flying,
-dramatic low camera angle looking up,
-motion blur on falling debris,
-rain drops,
-
-Negative:
-[Tag Block D], happy, smiling, cheerful, bright colors, blue sky, daylight
-```
-
-**aurora_death_splash.png** (Seed: 4002, 1024x576, 35 steps, CFG 8.0)
-```
-Prompt:
-masterpiece, best quality, ultra detailed,
-anime style, official art, league of legends splash art style,
-cinematic lighting, dramatic atmosphere, depth of field,
-highly detailed face, beautiful detailed eyes,
-feminine android, white silver chassis at joints,
-cracking cyan diamond on forehead leaking light,
-dimming cyan eyes,
-1girl,
-long platinum blonde hair sweeping in arc,
-gold amber armor cracked,
-visor shattered, both eyes visible and dimming,
-collapsing sideways, rifle falling from hands,
-muzzle flash from rifle barrel, one last shot fired,
-one zombie hit and falling in background,
-zombie silhouettes in green fog with red eyes behind her,
-dark atmosphere,
-expression of pain but satisfaction,
-side view composition,
-motion blur, debris,
-
-Negative:
-[Tag Block D], happy, smiling, cheerful, bright colors, blue sky, daylight
-```
-
-**lily_death_splash.png** (Seed: 4003, 1024x576, 35 steps, CFG 8.0)
-```
-Prompt:
-masterpiece, best quality, ultra detailed,
-anime style, official art, league of legends splash art style,
-cinematic lighting, dramatic atmosphere, depth of field,
-highly detailed face, beautiful detailed eyes,
-feminine android, white silver chassis at joints,
-cracking cyan diamond on forehead leaking light,
-dimming cyan eyes, tears,
-1girl,
-long wavy elf green hair flowing,
-white uniform and green coat torn,
-on her knees, reaching forward with both hands,
-healing glow fading from palms,
-green light particles dissolving into air,
-medical supplies scattered on ground,
-she died trying to heal someone,
-zombies closing in from darkness behind her,
-red eyes in green fog,
-sorrowful desperate expression, refusing to stop,
-front facing composition,
-emotional devastating scene,
-rain, dark atmosphere,
-
-Negative:
-[Tag Block D], happy, smiling, cheerful, bright colors, blue sky, daylight
-```
-
-**hana_death_splash.png** (Seed: 4004, 1024x576, 35 steps, CFG 8.0)
-```
-Prompt:
-masterpiece, best quality, ultra detailed,
-anime style, official art, league of legends splash art style,
-cinematic lighting, dramatic atmosphere, depth of field,
-highly detailed face, beautiful detailed eyes,
-feminine android, white silver chassis at joints,
-cracking cyan diamond on forehead leaking light,
-dimming cyan eyes,
-1girl,
-dark blackish brown hair loose from ponytail,
-cobalt blue jumpsuit torn,
-goggles pushed up, eyes dimming,
-collapsed against a metal barricade she just built,
-wrench still in hand but grip loosening,
-tired satisfied smile,
-zombies clawing at barricade behind her but cannot pass,
-her final build holds strong,
-faint silhouettes of other ARIA units fighting beyond,
-dark atmosphere, orange firelight,
-
-Negative:
-[Tag Block D], happy, cheerful, bright colors, blue sky, daylight
-```
-
-### 7.6 Enemies & Structures
-
-**zombie_sprite.png** (Seed: 6001, 512x512, 25 steps, CFG 7.0)
+**zombie_sprite.png** (384x384, 25 steps, CFG 7.0, Seed 6001)
 ```
 Prompt:
 masterpiece, best quality, chibi, game sprite,
 cute, super deformed, big head, big eyes, small body,
-full body, standing, solid white background,
-simple clean background, single character,
-pixel art style, game asset,
+full body, single character, game asset,
+solid bright green background,
 anime style zombie mutant,
 pale lavender gray skin, stylized,
 big round glowing red eyes, vacant hungry expression,
@@ -825,14 +739,14 @@ stylized crack patterns on skin,
 anime monster design, cute menacing,
 
 Negative:
-[Tag Block D], gore, blood, realistic, horror, scary, disgusting, grotesque, blue eyes, cyan eyes, pretty girl
+bad anatomy, bad hands, missing fingers, extra fingers, extra digit, fewer digits, blurry, low quality, worst quality, normal quality, watermark, text, signature, username, artist name, cropped, out of frame, deformed, disfigured, ugly, duplicate, morbid, mutilated, poorly drawn face, poorly drawn hands, extra arms, extra legs, fused fingers, too many fingers, long neck, multiple characters, 2girls, multiple views, split screen, male, masculine, boy, man, jpeg artifacts, error, gore, blood, realistic, horror, scary, disgusting, grotesque, blue eyes, cyan eyes, pretty girl
 ```
 
-**base.png** (Seed: 7001, 512x512, 25 steps, CFG 7.0)
+**base.png** (384x384, 25 steps, CFG 7.0, Seed 7001)
 ```
 Prompt:
-masterpiece, best quality, chibi, game sprite,
-game asset, solid white background,
+masterpiece, best quality, game sprite,
+game asset, solid bright green background,
 simple clean background,
 fortified military bunker building,
 metal plating walls, reinforced riveted panels,
@@ -845,43 +759,163 @@ post apocalyptic military shelter,
 top down slight angle view,
 
 Negative:
-[Tag Block D], people, characters, anime girl, detailed background, nature
+bad anatomy, bad hands, missing fingers, extra fingers, extra digit, fewer digits, blurry, low quality, worst quality, normal quality, watermark, text, signature, username, artist name, cropped, out of frame, deformed, disfigured, ugly, duplicate, morbid, mutilated, poorly drawn face, poorly drawn hands, extra arms, extra legs, fused fingers, too many fingers, long neck, multiple characters, 2girls, multiple views, split screen, male, masculine, boy, man, jpeg artifacts, error, people, characters, anime girl, detailed background, nature
+```
+
+**wall.png** (384x384, 25 steps, CFG 7.0, Seed 7002)
+```
+Prompt:
+masterpiece, best quality, game sprite,
+game asset, solid bright green background,
+metal barricade wall segment,
+corrugated steel sheet, rivets, rust patches,
+vertical defensive wall, post apocalyptic,
+simple object, no characters,
+
+Negative:
+bad anatomy, bad hands, missing fingers, extra fingers, extra digit, fewer digits, blurry, low quality, worst quality, normal quality, watermark, text, signature, username, artist name, cropped, out of frame, deformed, disfigured, ugly, duplicate, morbid, mutilated, poorly drawn face, poorly drawn hands, extra arms, extra legs, fused fingers, too many fingers, long neck, multiple characters, 2girls, multiple views, split screen, male, masculine, boy, man, jpeg artifacts, error, people, characters, anime girl
+```
+
+**barricade.png** (384x384, 25 steps, CFG 7.0, Seed 7003)
+```
+Prompt:
+masterpiece, best quality, game sprite,
+game asset, solid bright green background,
+sandbag barricade with scrap metal,
+stacked sandbags, metal scrap on top,
+low defensive barrier, post apocalyptic,
+simple object, no characters,
+
+Negative:
+bad anatomy, bad hands, missing fingers, extra fingers, extra digit, fewer digits, blurry, low quality, worst quality, normal quality, watermark, text, signature, username, artist name, cropped, out of frame, deformed, disfigured, ugly, duplicate, morbid, mutilated, poorly drawn face, poorly drawn hands, extra arms, extra legs, fused fingers, too many fingers, long neck, multiple characters, 2girls, multiple views, split screen, male, masculine, boy, man, jpeg artifacts, error, people, characters, anime girl
+```
+
+### 7.6 Map Tiles
+
+All tiles: 256x256, 20 steps, CFG 7.0. Negative for all tiles: "people, characters, anime girl, text, watermark, blurry, low quality"
+
+**tile_dirt.png** (Seed 8001)
+```
+seamless tileable texture, cracked dry brown earth ground,
+post apocalyptic wasteland dirt, game texture, top down view
+```
+
+**tile_dead_grass.png** (Seed 8002)
+```
+seamless tileable texture, dry brown ground with sparse yellowed dead grass,
+post apocalyptic wasteland, game texture, top down view
+```
+
+**tile_rubble.png** (Seed 8003)
+```
+seamless tileable texture, brown ground with scattered concrete rubble and small rocks,
+post apocalyptic debris, game texture, top down view
+```
+
+**tile_road.png** (Seed 8004)
+```
+seamless tileable texture, cracked dark gray asphalt road surface,
+faded road markings, post apocalyptic, game texture, top down view
+```
+
+**tile_rust.png** (Seed 8005)
+```
+seamless tileable texture, brown ground with embedded rusted metal scraps,
+post apocalyptic junkyard, game texture, top down view
+```
+
+**tile_bridge.png** (Seed 8006)
+```
+seamless tileable texture, weathered wooden planks bridge surface,
+rope and nail details, brown wood, game texture, top down view
+```
+
+**tile_dead_tree.png** (Seed 8007)
+```
+dead leafless tree, bare branches, dark brown trunk,
+post apocalyptic, game asset, transparent background, top down view
 ```
 
 ---
 
 ## 8. Post-Processing
 
-### Background Overlay
-Backgrounds (`bg_lore.png`, `bg_briefing.png`) are displayed with a semi-transparent dark overlay in the game UI. The overlay color is `Color(0.0, 0.0, 0.0, 0.5)` -- 50% black. The backgrounds should therefore be painted darker than normal to compensate, but still have enough detail to be visible through the overlay.
+### Background Upscaling
+1. Generate at 512x288
+2. Upscale to 1920x1080 using Lanczos interpolation (or Real-ESRGAN if installed)
+3. Apply slight blur (radius 1px) to smooth upscaling artifacts
 
-### Sprite Background Removal
-All sprites (in-game, dead, zombie, base) must have backgrounds removed. Process:
-1. Generate with "solid white background" in prompt
-2. Apply flood-fill background removal from corners (tolerance: 50)
-3. Manual check: ensure no white artifacts remain on character edges
-4. Save as RGBA PNG with transparent background
+### Sprite Background Removal (Chroma-Key)
+All sprites are generated on **bright green background** (#00FF00).
+1. Remove all pixels within tolerance of pure green (hue 100-140, saturation > 50%)
+2. Edge refinement: 1px erosion on alpha channel to remove green fringing
+3. Save as RGBA PNG with transparent background
 
 ### Sprite Downscaling
-1. Generate at 512x512
-2. Save full-resolution version as `{name}_fullres.png` for reference
-3. Downscale to target size using **NEAREST NEIGHBOR** interpolation (preserves pixel art crispness)
-4. Save final version as `{name}.png`
+1. Generate at 384x384 (sprites) or 256x256 (tiles)
+2. Save full-res as `{name}_fullres.png`
+3. Downscale to target using **LANCZOS** (not NEAREST -- review found NEAREST at non-integer ratios produces artifacts; 384/128 = 3x is clean but Lanczos still looks better for AI art)
+4. Save final as `{name}.png`
 
-### Death Splash Display
-Death splashes are displayed as a temporary full-screen overlay:
-1. Fade in over 0.5s
-2. Display for 3 seconds
-3. Fade out over 0.5s
-4. Dark vignette border (20% darker at edges)
-5. Character name displayed at bottom: "[Name] -- OFFLINE" in white text
+### Dead Sprite Desaturation
+1. Take the generated dead sprite (full color)
+2. Reduce saturation by 30% in post-processing
+3. Reduce brightness by 15%
+4. This ensures hair colors match alive versions but look "powered down"
 
-### Quality Check
-After generation, verify each image against:
-- [ ] Correct character features (hair color, eye color, weapon, outfit)
-- [ ] Anima diamond on forehead visible (alive) or cracked (dead)
-- [ ] Cyan eyes (alive) or dim/closed (dead)
-- [ ] Class color correct (red/gold/green/blue)
-- [ ] No extra characters in the image
-- [ ] No watermarks or text artifacts
-- [ ] Consistent art style across all images of same type
+### Death Splash Display (MVP -- in-engine, not AI-generated)
+1. Load the character's portrait image (512x768)
+2. Apply dark red tint overlay (Color(0.3, 0.0, 0.0, 0.5))
+3. Add vignette (20% darker at edges)
+4. Particle effects: cyan diamond fragments floating, sparks
+5. Text at bottom: "[Name] -- OFFLINE" in white
+6. Fade in 0.5s, display 2s, fade out 0.5s
+7. **Skippable on click** (prevents blocking gameplay)
+8. If multiple deaths, queue with 0.5s overlap
+
+---
+
+## 9. Iteration Strategy
+
+AI generation rarely produces perfect results on first try. Follow this workflow:
+
+### Per-Asset Generation
+1. Generate **4 variants** per seed (use seeds: base, base+1, base+2, base+3)
+2. Visually review all 4 at target resolution (not just full-res)
+3. Pick the best one
+4. If none are acceptable, adjust prompt and re-batch
+
+### Common Issues and Fixes
+| Issue | Fix |
+|-------|-----|
+| Wrong weapon/missing equipment | Move weapon tags earlier in prompt, add to negative |
+| Multiple characters | Add "solo, 1girl" weight, strengthen "single character" |
+| Style inconsistent | Use same seed range for similar assets (e.g., all sprites 2001-2004) |
+| Green bg leaking onto character | Increase bg removal tolerance, try magenta bg instead |
+| Details lost at 128px | Keep at 384px full-res, reduce detail in prompt |
+| Wrong hair color | Put hair color as first character descriptor |
+
+### Fallback Plan
+If AI generation consistently fails for an asset category after 3 batches:
+- **Sprites:** Fall back to programmatic pixel art (generate_sprites.py)
+- **Portraits:** Use a close-enough generation with post-processing (color correction, crop)
+- **Backgrounds:** Use solid gradient backgrounds with particle overlays
+- **Death splash:** Already MVP-simplified to portrait + effects
+
+---
+
+## 10. Scope & Deferrals
+
+### MVP (this spec)
+- 25 static assets: 2 backgrounds, 4 portraits, 8 sprites (alive+dead), 1 zombie, 3 structures, 7 map tiles
+- Death splash via portrait + in-engine effects (not AI art)
+- Static sprites only (no animation frames)
+
+### Phase 2 (deferred)
+- **Animation:** 2-4 frame idle animations for ARIA and zombie (sprite sheet)
+- **Zombie variants:** 2-3 visual variants (different poses, sizes)
+- **Full death splash art:** AI-generated scene illustrations (from Section 4 death splash descriptions in v1)
+- **Projectile VFX:** Bullet trails, sword slashes, heal particles (Godot particle system, not sprites)
+- **UI assets:** Custom icons, health bars (currently using Godot theme)
+- **Additional enemy types:** Runner, Brute, Spitter (Phase 4 enemies)
+- **Portraits for briefing cards:** Display in the pre-combat briefing UI
