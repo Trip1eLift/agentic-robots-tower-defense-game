@@ -1,0 +1,11 @@
+{
+  "id": "smg",
+  "name": "Ironworks SMG",
+  "class": "smg",
+  "type": "ranged",
+  "damage": 6,
+  "range": 80,
+  "attack_speed": 0.3,
+  "clip_size": 30,
+  "reload_time": 2.0
+}

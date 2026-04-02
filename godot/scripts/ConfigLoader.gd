@@ -4,12 +4,14 @@ var _robots: Dictionary = {}
 var _maps: Dictionary = {}
 var _missions: Dictionary = {}
 var _enemies: Dictionary = {}
+var _weapons: Dictionary = {}
 
 func _ready() -> void:
 	_load_robots()
 	_load_maps()
 	_load_enemies()
 	_load_missions()
+	_load_weapons()
 
 func _load_robots() -> void:
 	var dir = DirAccess.open("res://data/robots/archetypes")
@@ -24,6 +26,7 @@ func _load_robots() -> void:
 			if cfg:
 				_robots[cfg["id"]] = cfg
 		file_name = dir.get_next()
+	dir.list_dir_end()
 
 func _load_maps() -> void:
 	var dir = DirAccess.open("res://data/maps")
@@ -37,6 +40,7 @@ func _load_maps() -> void:
 			if cfg:
 				_maps[cfg["id"]] = cfg
 		file_name = dir.get_next()
+	dir.list_dir_end()
 
 func _load_enemies() -> void:
 	var dir = DirAccess.open("res://data/enemies")
@@ -50,6 +54,7 @@ func _load_enemies() -> void:
 			if cfg:
 				_enemies[cfg["id"]] = cfg
 		file_name = dir.get_next()
+	dir.list_dir_end()
 
 func _load_missions() -> void:
 	_load_missions_from_dir("res://data/campaign/chapter_01")
@@ -66,6 +71,22 @@ func _load_missions_from_dir(path: String) -> void:
 			if cfg:
 				_missions[cfg["id"]] = cfg
 		file_name = dir.get_next()
+	dir.list_dir_end()
+
+func _load_weapons() -> void:
+	var dir = DirAccess.open("res://data/weapons")
+	if dir == null:
+		push_error("ConfigLoader: cannot open data/weapons")
+		return
+	dir.list_dir_begin()
+	var file_name = dir.get_next()
+	while file_name != "":
+		if file_name.ends_with(".json"):
+			var cfg = _load_json("res://data/weapons/" + file_name)
+			if cfg:
+				_weapons[cfg["id"]] = cfg
+		file_name = dir.get_next()
+	dir.list_dir_end()
 
 func _load_json(path: String) -> Dictionary:
 	var file = FileAccess.open(path, FileAccess.READ)
@@ -94,3 +115,9 @@ func get_mission(mission_id: String) -> Dictionary:
 
 func get_enemy(enemy_id: String) -> Dictionary:
 	return _enemies.get(enemy_id, {})
+
+func get_weapon(weapon_id: String) -> Dictionary:
+	if not _weapons.has(weapon_id):
+		push_error("ConfigLoader: weapon not found: " + weapon_id)
+		return {"id": weapon_id, "name": "Fallback", "class": "unknown", "type": "melee", "damage": 1, "range": 50, "attack_speed": 1.0}
+	return _weapons[weapon_id]
