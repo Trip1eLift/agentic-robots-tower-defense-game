@@ -4,12 +4,12 @@
 [ext_resource type="Texture2D" path="res://assets/placeholder/base.png" id="2"]
 
 [sub_resource type="NavigationPolygon" id="NavigationPolygon_001"]
-vertices = PackedVector2Array(20, 20, 1004, 20, 1004, 580, 20, 580)
+vertices = PackedVector2Array(20, 20, 1900, 20, 1900, 1060, 20, 1060)
 polygons = [PackedInt32Array(0, 1, 2, 3)]
-outlines = [PackedVector2Array(20, 20, 1004, 20, 1004, 580, 20, 580)]
+outlines = [PackedVector2Array(20, 20, 1900, 20, 1900, 1060, 20, 1060)]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_base"]
-radius = 32.0
+radius = 48.0
 
 [node name="Map" type="Node2D"]
 script = ExtResource("1")
@@ -18,7 +18,7 @@ script = ExtResource("1")
 navigation_polygon = SubResource("NavigationPolygon_001")
 
 [node name="Base" type="Node2D" parent="."]
-position = Vector2(512, 500)
+position = Vector2(960, 900)
 
 [node name="Sprite2D" type="Sprite2D" parent="Base"]
 texture = ExtResource("2")
@@ -31,24 +31,24 @@ shape = SubResource("CircleShape2D_base")
 [node name="EnemySpawnPoints" type="Node2D" parent="."]
 
 [node name="spawn_north" type="Marker2D" parent="EnemySpawnPoints"]
-position = Vector2(512, 50)
+position = Vector2(960, 60)
 
 [node name="spawn_west" type="Marker2D" parent="EnemySpawnPoints"]
-position = Vector2(50, 300)
+position = Vector2(60, 540)
 
 [node name="RobotSpawnZone" type="Node2D" parent="."]
-position = Vector2(350, 460)
+position = Vector2(700, 820)
 
 [node name="StrategicPositions" type="Node2D" parent="."]
 
 [node name="north_chokepoint" type="Marker2D" parent="StrategicPositions"]
-position = Vector2(512, 200)
+position = Vector2(960, 360)
 
 [node name="west_flank" type="Marker2D" parent="StrategicPositions"]
-position = Vector2(200, 300)
+position = Vector2(380, 540)
 
 [node name="base_entrance" type="Marker2D" parent="StrategicPositions"]
-position = Vector2(512, 420)
+position = Vector2(960, 760)
 
 [node name="rear_support" type="Marker2D" parent="StrategicPositions"]
-position = Vector2(512, 460)
+position = Vector2(960, 830)
