@@ -1,7 +1,8 @@
-[gd_scene load_steps=5 format=3 uid="uid://robot001"]
+[gd_scene load_steps=6 format=3 uid="uid://robot001"]
 
 [ext_resource type="Script" path="res://scenes/robots/Robot.gd" id="1"]
 [ext_resource type="Texture2D" path="res://assets/aria/aurora_sprite.png" id="2"]
+[ext_resource type="Script" path="res://scenes/robots/AttackComponent.gd" id="3"]
 
 [sub_resource type="CapsuleShape2D" id="CapsuleShape2D_body"]
 radius = 16.0
@@ -55,3 +56,6 @@ one_shot = true
 [node name="AttackTimer" type="Timer" parent="."]
 wait_time = 1.0
 one_shot = false
+
+[node name="AttackComponent" type="Node" parent="."]
+script = ExtResource("3")

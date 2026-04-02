@@ -30,14 +30,12 @@ func _ready() -> void:
 	var robot_configs = CampaignManager.get_alive_robots()
 	GameManager.spawn_robots(robot_configs, player_instructions)
 
-	# Restore health/ammo from previous mission
+	# Restore health from previous mission
 	for robot in get_tree().get_nodes_in_group("robots"):
 		if is_instance_valid(robot):
 			var rid = robot.robot_id
 			var saved_hp = CampaignManager.get_robot_health(rid, robot._max_health)
-			var saved_ammo = CampaignManager.get_robot_ammo(rid, robot._ammo)
 			robot._health = saved_hp
-			robot._ammo = saved_ammo
 			if robot._health_bar:
 				robot._health_bar.value = saved_hp
 
@@ -86,7 +84,7 @@ func _show_result_overlay(text: String) -> void:
 func _save_robot_states() -> void:
 	for robot in GameManager._robots:
 		if is_instance_valid(robot):
-			CampaignManager.save_robot_state(robot.robot_id, robot.get_health(), robot.get_ammo())
+			CampaignManager.save_robot_state(robot.robot_id, robot.get_health(), 0)
 
 func _print_recording_summary() -> void:
 	var s = GameRecorder.get_summary()
