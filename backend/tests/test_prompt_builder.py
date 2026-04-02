@@ -28,28 +28,41 @@ ROBOT_CONFIG = {
     "class": "architect",
     "rarity": "common",
     "personality_prompt": "You are Hana, a methodical Architect.",
-    "base_stats": {"speed": 4, "damage": 3, "armor": 5, "health": 100, "ammo": 40, "building_skill": 7, "intelligence": 5}
+    "weapon_id": "smg",
+    "base_stats": {"speed": 4, "armor": 5, "health": 100, "building_skill": 7, "intelligence": 5}
 }
 
-ROBOT_RUNTIME_STATS = {"health": 80, "ammo": 35}
+WEAPON_CONFIG = {
+    "id": "smg",
+    "name": "Ironworks SMG",
+    "class": "smg",
+    "type": "ranged",
+    "damage": 6,
+    "range": 80,
+    "attack_speed": 0.3,
+    "clip_size": 30,
+    "reload_time": 2.0
+}
+
+ROBOT_RUNTIME_STATS = {"health": 80, "weapon_state": {"clip": 25, "max_clip": 30, "is_reloading": False}}
 
 
 def test_prompt_contains_personality():
     builder = PromptBuilder()
-    prompt = builder.build(ROBOT_CONFIG, ROBOT_RUNTIME_STATS, _make_event())
+    prompt = builder.build(ROBOT_CONFIG, WEAPON_CONFIG, ROBOT_RUNTIME_STATS, _make_event())
     assert "You are Hana, a methodical Architect" in prompt
 
 
 def test_prompt_contains_event():
     builder = PromptBuilder()
-    prompt = builder.build(ROBOT_CONFIG, ROBOT_RUNTIME_STATS, _make_event())
+    prompt = builder.build(ROBOT_CONFIG, WEAPON_CONFIG, ROBOT_RUNTIME_STATS, _make_event())
     assert "ENEMY_SPOTTED" in prompt
     assert "zombie spotted at north_chokepoint" in prompt
 
 
 def test_prompt_contains_strategic_positions():
     builder = PromptBuilder()
-    prompt = builder.build(ROBOT_CONFIG, ROBOT_RUNTIME_STATS, _make_event())
+    prompt = builder.build(ROBOT_CONFIG, WEAPON_CONFIG, ROBOT_RUNTIME_STATS, _make_event())
     assert "north_chokepoint" in prompt
     assert "rear_support" in prompt
 
@@ -57,7 +70,7 @@ def test_prompt_contains_strategic_positions():
 def test_intelligence_truncates_player_instructions():
     long_instructions = "x" * 1000
     builder = PromptBuilder()
-    prompt = builder.build(ROBOT_CONFIG, ROBOT_RUNTIME_STATS, _make_event(player_instructions=long_instructions))
+    prompt = builder.build(ROBOT_CONFIG, WEAPON_CONFIG, ROBOT_RUNTIME_STATS, _make_event(player_instructions=long_instructions))
     match = re.search(r"\[Player Instructions\]\n(.*?)(\n\n|\n\[)", prompt, re.DOTALL)
     assert match is not None, "Player Instructions section not found in prompt"
     instructions_section = match.group(1).strip()
@@ -71,19 +84,19 @@ def test_prompt_contains_commander_broadcast():
     event = _make_event()
     event.commander_broadcast = "Fall back to base!"
     builder = PromptBuilder()
-    prompt = builder.build(ROBOT_CONFIG, ROBOT_RUNTIME_STATS, event)
+    prompt = builder.build(ROBOT_CONFIG, WEAPON_CONFIG, ROBOT_RUNTIME_STATS, event)
     assert "Fall back to base!" in prompt
 
 
 def test_prompt_ends_with_json_instruction():
     builder = PromptBuilder()
-    prompt = builder.build(ROBOT_CONFIG, ROBOT_RUNTIME_STATS, _make_event())
+    prompt = builder.build(ROBOT_CONFIG, WEAPON_CONFIG, ROBOT_RUNTIME_STATS, _make_event())
     assert "You MUST respond with ONLY a JSON object" in prompt
 
 
 def test_prompt_includes_build_actions():
     builder = PromptBuilder()
-    prompt = builder.build(ROBOT_CONFIG, ROBOT_RUNTIME_STATS, _make_event())
+    prompt = builder.build(ROBOT_CONFIG, WEAPON_CONFIG, ROBOT_RUNTIME_STATS, _make_event())
     assert "build" in prompt
     assert "deploy_turret" in prompt
     assert '"structure": "wall"' in prompt
@@ -91,7 +104,7 @@ def test_prompt_includes_build_actions():
 
 def test_prompt_commander_broadcast_none():
     builder = PromptBuilder()
-    prompt = builder.build(ROBOT_CONFIG, ROBOT_RUNTIME_STATS, _make_event())
+    prompt = builder.build(ROBOT_CONFIG, WEAPON_CONFIG, ROBOT_RUNTIME_STATS, _make_event())
     assert "Commander broadcast: None" in prompt
 
 
@@ -99,5 +112,19 @@ def test_prompt_empty_recent_events():
     event = _make_event()
     event.local_context.recent_events = []
     builder = PromptBuilder()
-    prompt = builder.build(ROBOT_CONFIG, ROBOT_RUNTIME_STATS, event)
+    prompt = builder.build(ROBOT_CONFIG, WEAPON_CONFIG, ROBOT_RUNTIME_STATS, event)
     assert "Recent events:\nNone" in prompt
+
+
+def test_prompt_contains_weapon_info():
+    builder = PromptBuilder()
+    prompt = builder.build(ROBOT_CONFIG, WEAPON_CONFIG, ROBOT_RUNTIME_STATS, _make_event())
+    assert "Ironworks SMG" in prompt
+    assert "damage=6" in prompt
+    assert "range=80" in prompt
+
+
+def test_prompt_contains_weapon_state():
+    builder = PromptBuilder()
+    prompt = builder.build(ROBOT_CONFIG, WEAPON_CONFIG, ROBOT_RUNTIME_STATS, _make_event())
+    assert "25/30" in prompt or "clip" in prompt.lower()

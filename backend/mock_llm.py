@@ -71,7 +71,7 @@ class MockLLM:
     def _medic(self, allies: list) -> str:
         if allies:
             lowest = min(allies, key=lambda a: a["health"])
-            # target_id must be int to match SupportAction schema; use index as fallback
+            # target_id can be int or string per SupportAction schema; prefer ally id, fall back to index
             tid = lowest.get("id")
             if not isinstance(tid, int):
                 tid = allies.index(lowest) + 1

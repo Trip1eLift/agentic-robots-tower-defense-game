@@ -59,8 +59,13 @@ async def process_robot_events(robot_id: str, websocket: WebSocket) -> None:
                 continue
 
             try:
-                runtime_stats = {"health": state.health, "ammo": state.ammo}
-                prompt = prompt_builder.build(robot_config, runtime_stats, event)
+                weapon_id = robot_config.get("weapon_id", "broadsword")
+                try:
+                    weapon_config = config_loader.get_weapon(weapon_id)
+                except KeyError:
+                    weapon_config = {"id": weapon_id, "name": "Fallback", "type": "melee", "damage": 1, "range": 50, "attack_speed": 1.0}
+                runtime_stats = {"health": state.health, "weapon_state": state.weapon_state or {}}
+                prompt = prompt_builder.build(robot_config, weapon_config, runtime_stats, event)
                 async with _ollama_semaphore:
                     llm_response = await ollama_client.think(prompt)
                 action = action_parser.parse(llm_response)
@@ -101,8 +106,8 @@ async def websocket_endpoint(websocket: WebSocket) -> None:
                         robot_id=robot_id,
                         health=data["health"],
                         max_health=data["health"],
-                        ammo=data["ammo"],
-                        position=tuple(data["position"])
+                        position=tuple(data["position"]),
+                        weapon_state=data.get("weapon_state")
                     )
                     if robot_id not in processor_tasks:
                         processor_tasks[robot_id] = asyncio.create_task(
@@ -116,8 +121,8 @@ async def websocket_endpoint(websocket: WebSocket) -> None:
                         robot_state_store.update_health(robot_id, data["health"])
                     if "position" in data:
                         robot_state_store.update_position(robot_id, tuple(data["position"]))
-                    if "ammo" in data:
-                        robot_state_store.get(robot_id).ammo = data["ammo"]
+                    if "weapon_state" in data:
+                        robot_state_store.update_weapon_state(robot_id, data["weapon_state"])
                     continue
 
                 msg = WsIncoming(**data)

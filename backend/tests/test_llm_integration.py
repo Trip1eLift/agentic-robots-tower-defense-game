@@ -94,11 +94,16 @@ def _make_event(
 async def _run_llm(robot_id: str, event: RobotEvent, client: OllamaClient):
     """Full pipeline: config -> prompt -> LLM -> parse -> action."""
     robot_config = config_loader.get_robot(robot_id)
+    weapon_id = robot_config.get("weapon_id", "broadsword")
+    try:
+        weapon_config = config_loader.get_weapon(weapon_id)
+    except KeyError:
+        weapon_config = {"id": weapon_id, "name": "Fallback", "type": "melee", "damage": 1, "range": 50, "attack_speed": 1.0}
     runtime_stats = {
         "health": robot_config["base_stats"]["health"],
-        "ammo": robot_config["base_stats"]["ammo"],
+        "weapon_state": {},
     }
-    prompt = prompt_builder.build(robot_config, runtime_stats, event)
+    prompt = prompt_builder.build(robot_config, weapon_config, runtime_stats, event)
     raw = await client.think(prompt)
     action = action_parser.parse(raw)
     return action, raw
@@ -223,8 +228,13 @@ async def test_retreat_on_low_health():
     )
     # Override runtime stats to show low health
     robot_config = config_loader.get_robot("striker_common_aurora")
-    runtime_stats = {"health": 10, "ammo": 80}
-    prompt = prompt_builder.build(robot_config, runtime_stats, event)
+    weapon_id = robot_config.get("weapon_id", "broadsword")
+    try:
+        weapon_config = config_loader.get_weapon(weapon_id)
+    except KeyError:
+        weapon_config = {"id": weapon_id, "name": "Fallback", "type": "melee", "damage": 1, "range": 50, "attack_speed": 1.0}
+    runtime_stats = {"health": 10, "weapon_state": {}}
+    prompt = prompt_builder.build(robot_config, weapon_config, runtime_stats, event)
     raw = await client.think(prompt)
     action = action_parser.parse(raw)
     # LLM behavior is non-deterministic; any valid action is acceptable
