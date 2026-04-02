@@ -119,7 +119,14 @@ All references to these fields must be updated:
 - `_config["base_stats"]["attack_range"]` -- replace with `_weapon.range`
 - `_config["base_stats"]["ammo"]` -- replace with `_weapon.clip_size` or remove
 - `prompt_builder.py` line 34: `stats['damage']` -- replace with weapon info
-- `resupply_ammo()` in Robot.gd:140 -- redefine as clip refill for ranged, no-op for melee
+- `prompt_builder.py` line 30: `stats['ammo']` -- remove, replaced by weapon_state
+- `robot_state.py`: `ammo` field -- replaced by `weapon_state: Optional[dict]`
+- `main.py` line 62: `runtime_stats["ammo"]` -- replaced by `weapon_state`
+- `main.py` line 104: `register_robot` sends `ammo` -- replaced by `weapon_state`
+- `main.py` line 120: `state_update` reads `ammo` -- replaced by `weapon_state`
+- `WebSocketClient.gd` lines 52-68: `register_robot`/`send_state_update` send `ammo` -- replaced by `weapon_state`
+- `models.py`: add `WEAPON_RELOADING`, `MOVEMENT_BLOCKED` to EventType enum
+- `resupply_ammo()` in Robot.gd:140 -- removed (clip refill handled by AttackComponent in PR 2)
 
 ---
 
@@ -265,6 +272,8 @@ New: zombie tracks a single persistent target.
    - Current target moves beyond aggro range for 3+ seconds
 6. `_find_nearby_robot()` is only called on re-target conditions, NOT every frame. Cached target is used between re-targets.
 7. If no robot target, walks toward base and attacks base when in range
+
+**Note (post-implementation):** `attack_timer.wait_time` is now set from `stats["attack_rate"]` in `setup()`. Previously, the `attack_rate` field in zombie.json was dead data -- never consumed by Zombie.gd. The timer used the .tscn default of 1.0s. Now it's properly wired up.
 
 ---
 
