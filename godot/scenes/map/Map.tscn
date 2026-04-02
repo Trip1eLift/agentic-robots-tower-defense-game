@@ -1,7 +1,7 @@
 [gd_scene load_steps=5 format=3 uid="uid://map001"]
 
 [ext_resource type="Script" path="res://scenes/map/Map.gd" id="1"]
-[ext_resource type="Texture2D" path="res://assets/structures/base_fullres.png" id="2"]
+[ext_resource type="Texture2D" path="res://assets/structures/base.png" id="2"]
 
 [sub_resource type="NavigationPolygon" id="NavigationPolygon_001"]
 vertices = PackedVector2Array(20, 20, 1900, 20, 1900, 1060, 20, 1060)
