@@ -1,7 +1,7 @@
 [gd_scene load_steps=5 format=3 uid="uid://robot001"]
 
 [ext_resource type="Script" path="res://scenes/robots/Robot.gd" id="1"]
-[ext_resource type="Texture2D" path="res://assets/placeholder/robot_architect.png" id="2"]
+[ext_resource type="Texture2D" path="res://assets/aria/aurora_sprite.png" id="2"]
 
 [sub_resource type="CapsuleShape2D" id="CapsuleShape2D_body"]
 radius = 16.0
