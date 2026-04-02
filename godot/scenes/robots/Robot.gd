@@ -31,6 +31,11 @@ const MAX_RECENT_EVENTS = 5
 const BODY_BLOCKING_ENABLED = true
 const EVENT_COOLDOWN_MS = 2000
 
+var _last_move_position: Vector2 = Vector2.ZERO
+var _stuck_timer: float = 0.0
+const STUCK_THRESHOLD_PX = 5.0
+const STUCK_TIMEOUT_SEC = 2.0
+
 func setup(config: Dictionary, map: Node) -> void:
 	_config = config
 	_map = map
@@ -145,6 +150,29 @@ func _physics_process(delta: float) -> void:
 		_execute_movement()
 	_check_enemy_in_range()
 	_auto_attack_if_idle()
+	_update_stuck_detection(delta)
+
+func _update_stuck_detection(delta: float) -> void:
+	var action_name = _current_action.get("action", "idle")
+	if action_name not in ["move", "retreat", "attack", "snipe"]:
+		_stuck_timer = 0.0
+		_last_move_position = global_position
+		return
+	if nav_agent.is_navigation_finished():
+		_stuck_timer = 0.0
+		_last_move_position = global_position
+		return
+	var moved = global_position.distance_to(_last_move_position)
+	if moved > STUCK_THRESHOLD_PX:
+		_stuck_timer = 0.0
+		_last_move_position = global_position
+		return
+	_stuck_timer += delta
+	if _stuck_timer >= STUCK_TIMEOUT_SEC:
+		_stuck_timer = 0.0
+		_last_move_position = global_position
+		_fire_event("MOVEMENT_BLOCKED",
+			"stuck moving to " + str(nav_agent.target_position))
 
 func _auto_attack_if_idle() -> void:
 	if attack_component.is_winding_up():
