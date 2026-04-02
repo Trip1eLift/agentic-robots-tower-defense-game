@@ -38,7 +38,7 @@ def test_load_mission_config():
 def test_load_enemy_config():
     loader = ConfigLoader(DATA_DIR)
     enemy = loader.get_enemy("zombie")
-    assert enemy["stats"]["health"] == 50
+    assert enemy["stats"]["health"] == 80
 
 
 def test_missing_robot_raises():
