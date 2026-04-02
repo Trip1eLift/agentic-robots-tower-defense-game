@@ -140,11 +140,14 @@ func _can_fire_event(event_type: String) -> bool:
 func _physics_process(delta: float) -> void:
 	if not is_alive():
 		return
-	_execute_movement()
+	if not attack_component.is_winding_up():
+		_execute_movement()
 	_check_enemy_in_range()
 	_auto_attack_if_idle()
 
 func _auto_attack_if_idle() -> void:
+	if attack_component.is_winding_up():
+		return
 	if attack_component.has_target() or _enemies_in_perception.is_empty():
 		return
 	var action_name = _current_action.get("action", "idle")
@@ -182,6 +185,10 @@ func _check_enemy_in_range() -> void:
 
 func execute_action(action: Dictionary) -> void:
 	if _is_dead:
+		return
+	# Buffer action if winding up
+	if attack_component.is_winding_up():
+		attack_component.buffer_action(action)
 		return
 	_current_action = action
 	thinking_label.visible = false
