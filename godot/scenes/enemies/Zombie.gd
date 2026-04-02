@@ -71,7 +71,8 @@ func _physics_process(_delta: float) -> void:
 
 func _find_nearby_robot() -> Node2D:
 	var closest: Node2D = null
-	var closest_dist := _attack_range
+	var aggro_range := _attack_range * 3.0  # detect robots from further away
+	var closest_dist := aggro_range
 	for robot in get_tree().get_nodes_in_group("robots"):
 		if not is_instance_valid(robot):
 			continue
@@ -84,14 +85,17 @@ func _find_nearby_robot() -> Node2D:
 	return closest
 
 func _on_attack_timer() -> void:
-	# Check if attacking a robot
-	var robot_target = _find_nearby_robot()
-	if robot_target:
-		var dist = global_position.distance_to(robot_target.global_position)
-		if dist <= _attack_range and robot_target.has_method("take_damage"):
-			robot_target.take_damage(_damage)
-		return
-	# Otherwise attack the base
+	# Try to attack a robot in melee range
+	for robot in get_tree().get_nodes_in_group("robots"):
+		if not is_instance_valid(robot):
+			continue
+		if robot.has_method("is_alive") and not robot.is_alive():
+			continue
+		var dist = global_position.distance_to(robot.global_position)
+		if dist <= _attack_range and robot.has_method("take_damage"):
+			robot.take_damage(_damage)
+			return
+	# No robot in melee range -- attack base if close enough
 	if _base_target and is_instance_valid(_base_target):
 		var dist = global_position.distance_to(_base_position)
 		if dist <= _attack_range and _base_target.has_method("take_base_damage"):

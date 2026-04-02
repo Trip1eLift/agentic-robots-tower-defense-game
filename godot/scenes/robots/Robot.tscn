@@ -1,11 +1,11 @@
 [gd_scene load_steps=5 format=3 uid="uid://robot001"]
 
 [ext_resource type="Script" path="res://scenes/robots/Robot.gd" id="1"]
-[ext_resource type="Texture2D" path="res://assets/placeholder/robot_architect.png" id="2"]
+[ext_resource type="Texture2D" path="res://assets/aria/aurora_sprite.png" id="2"]
 
 [sub_resource type="CapsuleShape2D" id="CapsuleShape2D_body"]
-radius = 32.0
-height = 80.0
+radius = 16.0
+height = 40.0
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_perception"]
 radius = 200.0
@@ -16,6 +16,7 @@ collision_mask = 2
 script = ExtResource("1")
 
 [node name="Sprite2D" type="Sprite2D" parent="."]
+scale = Vector2(0.5, 0.5)
 texture = ExtResource("2")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
@@ -33,14 +34,14 @@ monitorable = false
 shape = SubResource("CircleShape2D_perception")
 
 [node name="SpeechLabel" type="Label" parent="."]
-offset_top = -90.0
+offset_top = -60.0
 offset_left = -80.0
 offset_right = 80.0
 text = ""
 horizontal_alignment = 1
 
 [node name="ThinkingLabel" type="Label" parent="."]
-offset_top = -75.0
+offset_top = -50.0
 offset_left = -20.0
 offset_right = 20.0
 text = "..."

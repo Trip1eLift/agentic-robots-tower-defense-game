@@ -83,7 +83,7 @@ func _setup_health_bar() -> void:
 	_name_label_node = Label.new()
 	_name_label_node.text = _config.get("name", robot_id)
 	_name_label_node.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_name_label_node.position = Vector2(-40, -75)
+	_name_label_node.position = Vector2(-40, -50)
 	_name_label_node.add_theme_font_size_override("font_size", 10)
 	add_child(_name_label_node)
 	_health_bar = ProgressBar.new()
@@ -91,7 +91,7 @@ func _setup_health_bar() -> void:
 	_health_bar.value = _health
 	_health_bar.custom_minimum_size = Vector2(50, 3)
 	_health_bar.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
-	_health_bar.position = Vector2(-30, -62)
+	_health_bar.position = Vector2(-30, -38)
 	_health_bar.show_percentage = false
 	# Force the height by overriding theme styles
 	var bg = StyleBoxFlat.new()
@@ -152,7 +152,7 @@ func _physics_process(delta: float) -> void:
 func _auto_attack_if_idle() -> void:
 	if attack_timer.is_stopped() and not _enemies_in_perception.is_empty():
 		var action_name = _current_action.get("action", "idle")
-		if action_name in ["idle", "move", "retreat", ""]:
+		if action_name in ["idle", "move", "retreat", "", "build", "deploy_turret"]:
 			# Find nearest valid enemy
 			var nearest: Node2D = null
 			var nearest_dist := 999999.0
@@ -235,7 +235,13 @@ func _on_attack_timer() -> void:
 func _perform_attack() -> void:
 	if _target_enemy == null or not is_instance_valid(_target_enemy):
 		return
-	var damage = _config["base_stats"]["damage"] * 5
+	var attack_range = _config.get("base_stats", {}).get("attack_range", 120.0)
+	var dist = global_position.distance_to(_target_enemy.global_position)
+	if dist > attack_range:
+		# Too far -- move toward target instead
+		nav_agent.target_position = _target_enemy.global_position
+		return
+	var damage = _config["base_stats"]["damage"] * 3
 	GameRecorder.log_attack(robot_id, GameManager.get_enemy_id(_target_enemy), damage)
 	if _target_enemy.has_method("take_damage"):
 		_target_enemy.take_damage(damage)

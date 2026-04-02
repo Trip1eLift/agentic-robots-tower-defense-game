@@ -14,6 +14,13 @@ var _max_chars: Dictionary = {}
 var _updating: bool = false
 var _char_labels: Dictionary = {}
 
+const PORTRAIT_MAP = {
+	"vanguard": "res://assets/aria/rex_portrait.png",
+	"architect": "res://assets/aria/hana_portrait.png",
+	"striker": "res://assets/aria/aurora_portrait.png",
+	"medic": "res://assets/aria/lily_portrait.png",
+}
+
 func setup(mission_id: String) -> void:
 	var mission = ConfigLoader.get_mission(mission_id)
 	mission_title.text = mission.get("title", "Mission")
@@ -77,63 +84,97 @@ func _build_robot_cards() -> void:
 		card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		card.size_flags_vertical = Control.SIZE_EXPAND_FILL
 		var card_style = StyleBoxFlat.new()
-		card_style.bg_color = Color(0.1, 0.12, 0.16)
+		card_style.bg_color = Color(0.05, 0.06, 0.1, 0.55)
 		card_style.border_color = _get_class_color(config.get("class", ""))
 		card_style.border_width_top = 3
 		card_style.border_width_left = 1
 		card_style.border_width_right = 1
 		card_style.border_width_bottom = 1
-		card_style.set_corner_radius_all(6)
-		card_style.set_content_margin_all(14)
+		card_style.set_corner_radius_all(8)
+		card_style.set_content_margin_all(10)
 		card.add_theme_stylebox_override("panel", card_style)
 		robot_grid.add_child(card)
 
-		var vbox = VBoxContainer.new()
-		vbox.add_theme_constant_override("separation", 6)
-		card.add_child(vbox)
+		# Main layout: portrait left, info right
+		var hbox = HBoxContainer.new()
+		hbox.add_theme_constant_override("separation", 12)
+		card.add_child(hbox)
 
-		# Header: name + class
-		var header = HBoxContainer.new()
-		vbox.add_child(header)
+		# Portrait with overlaid name/class
+		var portrait_wrapper = Control.new()
+		portrait_wrapper.custom_minimum_size = Vector2(220, 0)
+		portrait_wrapper.size_flags_vertical = Control.SIZE_EXPAND_FILL
+		hbox.add_child(portrait_wrapper)
+
+		var portrait = TextureRect.new()
+		var portrait_path = PORTRAIT_MAP.get(config.get("class", ""), "")
+		if portrait_path and ResourceLoader.exists(portrait_path):
+			portrait.texture = load(portrait_path)
+		portrait.set_anchors_preset(Control.PRESET_FULL_RECT)
+		portrait.expand_mode = 1  # EXPAND_IGNORE_SIZE
+		portrait.stretch_mode = 6  # STRETCH_KEEP_ASPECT_COVERED
+		portrait_wrapper.add_child(portrait)
+
+		# Dark gradient overlay at bottom for name/class
+		var name_overlay = ColorRect.new()
+		name_overlay.color = Color(0, 0, 0, 0.65)
+		name_overlay.set_anchor(SIDE_LEFT, 0)
+		name_overlay.set_anchor(SIDE_RIGHT, 1)
+		name_overlay.set_anchor(SIDE_BOTTOM, 1)
+		name_overlay.set_anchor(SIDE_TOP, 1)
+		name_overlay.offset_top = -52
+		name_overlay.offset_bottom = 0
+		portrait_wrapper.add_child(name_overlay)
+
+		var name_vbox = VBoxContainer.new()
+		name_vbox.set_anchor(SIDE_LEFT, 0)
+		name_vbox.set_anchor(SIDE_RIGHT, 1)
+		name_vbox.set_anchor(SIDE_BOTTOM, 1)
+		name_vbox.set_anchor(SIDE_TOP, 1)
+		name_vbox.offset_top = -50
+		name_vbox.offset_bottom = -4
+		name_vbox.offset_left = 6
+		name_vbox.offset_right = -6
+		portrait_wrapper.add_child(name_vbox)
 
 		var name_label = Label.new()
 		name_label.text = config["name"]
-		name_label.add_theme_font_size_override("font_size", 26)
+		name_label.add_theme_font_size_override("font_size", 20)
 		name_label.add_theme_color_override("font_color", _get_class_color(config.get("class", "")))
-		header.add_child(name_label)
+		name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		name_vbox.add_child(name_label)
 
 		var class_label = Label.new()
-		class_label.text = "  [" + config["class"].capitalize() + "]"
-		class_label.add_theme_font_size_override("font_size", 20)
-		class_label.add_theme_color_override("font_color", Color(0.6, 0.6, 0.6))
-		header.add_child(class_label)
+		class_label.text = config["class"].capitalize()
+		class_label.add_theme_font_size_override("font_size", 14)
+		class_label.add_theme_color_override("font_color", Color(0.75, 0.75, 0.75))
+		class_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		name_vbox.add_child(class_label)
 
-		# Description
-		var desc_label = Label.new()
-		desc_label.text = config.get("description", "")
-		desc_label.add_theme_font_size_override("font_size", 17)
-		desc_label.add_theme_color_override("font_color", Color(0.55, 0.55, 0.55))
-		desc_label.autowrap_mode = TextServer.AUTOWRAP_WORD
-		vbox.add_child(desc_label)
+		# Right side: stats + orders
+		var right_vbox = VBoxContainer.new()
+		right_vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		right_vbox.add_theme_constant_override("separation", 4)
+		hbox.add_child(right_vbox)
 
-		# Stats bar
+		# Stats
 		var stats = config.get("base_stats", {})
-		var stats_label = Label.new()
 		var hp = stats.get("health", 0)
 		var dmg = stats.get("damage", 0)
 		var armor = stats.get("armor", 0)
 		var ammo = stats.get("ammo", 0)
 		var rng = stats.get("attack_range", 0)
-		# Show current HP if carrying over from previous mission
 		var current_hp = CampaignManager.get_robot_health(config["id"], hp)
 		var current_ammo = CampaignManager.get_robot_ammo(config["id"], ammo)
+
+		var stats_label = Label.new()
 		if current_hp > 0 and current_hp < hp:
 			stats_label.text = "HP:" + str(current_hp) + "/" + str(hp) + "  DMG:" + str(dmg) + "  ARM:" + str(armor) + "  Ammo:" + str(current_ammo) + "/" + str(ammo) + "  RNG:" + str(rng)
 		else:
 			stats_label.text = "HP:" + str(hp) + "  DMG:" + str(dmg) + "  ARM:" + str(armor) + "  Ammo:" + str(ammo) + "  RNG:" + str(rng)
 		stats_label.add_theme_font_size_override("font_size", 18)
 		stats_label.add_theme_color_override("font_color", Color(0.8, 0.8, 0.6))
-		vbox.add_child(stats_label)
+		right_vbox.add_child(stats_label)
 
 		# Role hint
 		var role_label = Label.new()
@@ -141,16 +182,11 @@ func _build_robot_cards() -> void:
 		role_label.add_theme_font_size_override("font_size", 16)
 		role_label.add_theme_color_override("font_color", Color(0.5, 0.7, 0.5))
 		role_label.autowrap_mode = TextServer.AUTOWRAP_WORD
-		vbox.add_child(role_label)
+		right_vbox.add_child(role_label)
 
-		# Separator
-		var sep = HSeparator.new()
-		sep.add_theme_stylebox_override("separator", StyleBoxLine.new())
-		vbox.add_child(sep)
-
-		# Instructions label
+		# Orders header with char count
 		var instr_header = HBoxContainer.new()
-		vbox.add_child(instr_header)
+		right_vbox.add_child(instr_header)
 
 		var instr_label = Label.new()
 		instr_label.text = "Orders:"
@@ -173,29 +209,29 @@ func _build_robot_cards() -> void:
 
 		# Text input
 		var input = TextEdit.new()
-		input.custom_minimum_size = Vector2(0, 120)
+		input.custom_minimum_size = Vector2(0, 100)
 		input.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		input.size_flags_vertical = Control.SIZE_EXPAND_FILL
 		var input_style = StyleBoxFlat.new()
-		input_style.bg_color = Color(0.06, 0.07, 0.1)
+		input_style.bg_color = Color(0.04, 0.05, 0.08, 0.6)
 		input_style.border_color = Color(0.2, 0.22, 0.28)
 		input_style.set_border_width_all(1)
 		input_style.set_corner_radius_all(4)
-		input_style.set_content_margin_all(8)
+		input_style.set_content_margin_all(6)
 		input.add_theme_stylebox_override("normal", input_style)
 		var focus_style = StyleBoxFlat.new()
-		focus_style.bg_color = Color(0.07, 0.08, 0.12)
+		focus_style.bg_color = Color(0.05, 0.06, 0.1, 0.7)
 		focus_style.border_color = _get_class_color(config.get("class", "")) * Color(1, 1, 1, 0.6)
 		focus_style.set_border_width_all(1)
 		focus_style.set_corner_radius_all(4)
-		focus_style.set_content_margin_all(8)
+		focus_style.set_content_margin_all(6)
 		input.add_theme_stylebox_override("focus", focus_style)
 		input.add_theme_font_size_override("font_size", 18)
 		input.add_theme_color_override("font_color", Color(0.9, 0.9, 0.9))
 		input.text = _get_default_instructions(config.get("class", ""))
 		input.wrap_mode = TextEdit.LINE_WRAPPING_BOUNDARY
 		input.text_changed.connect(_on_text_changed.bind(config["id"]))
-		vbox.add_child(input)
+		right_vbox.add_child(input)
 		_instruction_inputs[config["id"]] = input
 
 		# Update char count for pre-filled text

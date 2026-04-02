@@ -21,6 +21,7 @@ navigation_polygon = SubResource("NavigationPolygon_001")
 position = Vector2(960, 900)
 
 [node name="Sprite2D" type="Sprite2D" parent="Base"]
+scale = Vector2(0.8, 0.8)
 texture = ExtResource("2")
 
 [node name="BaseHitbox" type="Area2D" parent="Base"]

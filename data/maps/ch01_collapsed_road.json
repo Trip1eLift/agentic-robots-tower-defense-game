@@ -4,7 +4,7 @@
   "tilemap": "res://maps/ch01_collapsed_road.tscn",
   "base_position": [960, 900],
   "robot_spawn_zones": [
-    {"id": "zone_main", "rect": [700, 750, 520, 140]}
+    {"id": "zone_main", "rect": [700, 620, 520, 100]}
   ],
   "enemy_spawn_points": [
     {"id": "spawn_north", "position": [960, 60]},
