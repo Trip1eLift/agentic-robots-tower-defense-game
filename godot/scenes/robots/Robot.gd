@@ -28,6 +28,7 @@ var _health_bar: ProgressBar = null
 var _name_label_node: Label = null
 
 const MAX_RECENT_EVENTS = 5
+const BODY_BLOCKING_ENABLED = true
 const EVENT_COOLDOWN_MS = 2000
 
 func setup(config: Dictionary, map: Node) -> void:
