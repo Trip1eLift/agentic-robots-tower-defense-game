@@ -1,11 +1,11 @@
 [gd_scene load_steps=4 format=3 uid="uid://zombie001"]
 
 [ext_resource type="Script" path="res://scenes/enemies/Zombie.gd" id="1"]
-[ext_resource type="Texture2D" path="res://assets/placeholder/zombie.png" id="2"]
+[ext_resource type="Texture2D" path="res://assets/enemies/zombie_sprite.png" id="2"]
 
 [sub_resource type="CapsuleShape2D" id="CapsuleShape2D_body"]
-radius = 16.0
-height = 40.0
+radius = 24.0
+height = 56.0
 
 [node name="Zombie" type="CharacterBody2D" groups=["enemies"]]
 collision_layer = 2
