@@ -9,7 +9,7 @@ Create pixel art assets for ARIA: Defenders of Duskwall. The visual direction is
 
 ## Art Style
 
-- **ARIA units:** 48x48 chibi anime. Big heads (~1/3 body), oversized eyes (3-4px), small bodies. Cute but combat-ready. Designed for player attachment (gacha-friendly appeal).
+- **ARIA units:** 48x48 chibi anime. Head-and-weapon dominant -- heads take ~40% of sprite height, weapons are oversized (60-70% of body height). Big eyes (5x4px), tiny stubby bodies. Cute but combat-ready. Designed for player attachment (gacha-friendly appeal). Each class has a visually distinct weapon that dominates the silhouette.
 - **Enemies:** 32x32. Grotesque, fewer colors (4-6), clearly threatening. Distinct from ARIA at a glance.
 - **Base:** 64x64. Fortified structure, largest sprite on the map.
 - **Map tiles:** 16x16. Blocky Minecraft-style overgrown wasteland. Cracked dirt, dead grass, debris.
@@ -35,10 +35,10 @@ Map tiles: earth tones -- brown (#8b7355), dark dirt (#5a4a3a), dead grass (#9b8
 
 | File | Character | Visual Description |
 |------|-----------|-------------------|
-| rex_sprite.png | Rex (Vanguard) | Heavy red plate armor, oversized shield (left hand) + sword (right), red scarf flowing behind, stocky wide stance, brown hair, cyan eyes, determined expression |
-| aurora_sprite.png | Aurora (Striker) | Gold/amber light recon armor, oversized sniper rifle held diagonally, targeting visor over right eye, sleek stance, blonde hair, cyan eyes, focused expression |
-| lily_sprite.png | Lily (Medic) | Green medic coat over white uniform, glowing green cross emblem on chest, hands slightly raised (healing pose), gentle expression, pink hair, cyan eyes |
-| hana_sprite.png | Hana (Architect) | Blue engineer jumpsuit, goggles pushed up on forehead, large wrench/hammer in hand, tool belt at waist, brown hair in ponytail, cyan eyes, confident smile |
+| rex_sprite.png | Rex (Vanguard) | Huge head (40%), heavy red armor, MASSIVE shield (left, 14px tall) + OVERSIZED sword (right, 20px tall), red scarf flowing, stubby legs, brown hair, big cyan eyes, determined expression |
+| aurora_sprite.png | Aurora (Striker) | Huge head, gold/amber light armor, MASSIVE sniper rifle (right side, 28px tall, nearly full sprite height), bright red scope + visor, blonde hair, big cyan eyes, focused expression |
+| lily_sprite.png | Lily (Medic) | Huge head, green coat over white uniform, OVERSIZED pistol (right hand, visible barrel), bright healing glow (left hand), cross emblem on chest, pink hair, big cyan eyes, gentle smile |
+| hana_sprite.png | Hana (Architect) | Huge head, blue jumpsuit, OVERSIZED wrench (right side, 22px tall), pistol (left hand, visible), bright goggles on forehead, brown ponytail, big cyan eyes, confident grin |
 
 ### Enemies (32x32 PNG, transparent background)
 

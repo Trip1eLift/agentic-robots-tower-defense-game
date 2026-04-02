@@ -70,6 +70,10 @@ func _ready() -> void:
 	skip_label.modulate.a = 0.5
 	fade_timer.wait_time = 0.03
 	fade_timer.timeout.connect(_on_type_tick)
+	# Defer start so layout resolves and get_total_character_count() is accurate
+	call_deferred("_start_typewriter")
+
+func _start_typewriter() -> void:
 	fade_timer.start()
 
 func _on_type_tick() -> void:

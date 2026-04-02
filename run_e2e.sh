@@ -38,7 +38,7 @@ echo "[E2E] Backend running (PID: $BACKEND_PID)"
 
 # Start Godot in autoplay mode
 echo "[E2E] Starting Godot in autoplay mode..."
-"$GODOT" --path godot/ -- --autoplay 2>&1 | tee e2e_output.log &
+"$GODOT" --path godot/ -- --autoplay --speed=5 2>&1 | tee e2e_output.log &
 GODOT_PID=$!
 
 echo "[E2E] Godot running (PID: $GODOT_PID)"
