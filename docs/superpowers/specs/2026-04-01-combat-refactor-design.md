@@ -110,7 +110,7 @@ Remove from robot configs:
 
 ### Weapon Loading
 
-ConfigLoader gains a `get_weapon(weapon_id: String) -> Dictionary` method that loads from `data/weapons/`. Robot.gd loads its weapon data at setup time and stores it as `_weapon`. All attack logic reads from `_weapon` instead of `_config["base_stats"]`.
+ConfigLoader gains a `get_weapon(weapon_id: String) -> Dictionary` method that loads from `data/weapons/`. If the weapon file is missing or malformed, `get_weapon()` prints an error and returns a fallback dictionary with sane defaults (damage=1, range=50, attack_speed=1.0, type="melee"). This prevents crashes from bad config. Robot.gd loads its weapon data at setup time and stores it as `_weapon`. All attack logic reads from `_weapon` instead of `_config["base_stats"]`.
 
 ### Callsite Audit (must verify during implementation)
 
@@ -320,13 +320,66 @@ Out of scope for this refactor. Current death behavior (sprite swap, collision d
 
 ---
 
-## 8. Implementation Sequence
+## 8. Code Organization -- AttackComponent Extraction
+
+Robot.gd is currently 386 lines and will grow significantly with the attack lock state machine. To prevent an unmaintainable god-script, extract attack logic into a separate child node.
+
+### AttackComponent (new script: `godot/scenes/robots/AttackComponent.gd`)
+
+Owns:
+- Weapon data reference (`_weapon`)
+- Attack lock state machine (`_is_winding_up`, windup timer, recovery timer)
+- Clip tracking (`_current_clip`, `_is_reloading`, reload timer)
+- Target reference for current attack
+- Attack shake tween
+- ATTACK_RANGE_BUFFER constant
+- `perform_attack()`, `_on_windup_complete()`, `_on_reload_complete()`
+- Action buffering during windup
+
+Does NOT own:
+- Movement, health, perception, LLM event firing, sprite reference
+- These stay in Robot.gd
+
+AttackComponent is added as a child node of Robot in Robot.tscn. Robot.gd calls `attack_component.start_attack(target)` and listens to signals like `attack_damage_applied(target, damage)`, `reload_started(weapon_name, reload_time)`, `windup_finished()`.
+
+---
+
+## 9. MOVEMENT_BLOCKED Event
+
+When body blocking is enabled, robots can get physically stuck behind other units. The LLM needs feedback when this happens.
+
+### Stuck Detection
+
+- Robot tracks `_last_move_position` and `_stuck_timer`
+- During a move action, if robot's position has not changed by more than 5px over 2 seconds, fire `MOVEMENT_BLOCKED` event
+- Event data: `robot_id`, `target_position`, `blocked_by` (nearest collision if detectable, otherwise "unknown")
+- Timer resets when robot successfully moves or gets a new action
+- LLM can respond by choosing a different path or switching to attack
+
+---
+
+## 10. Implementation Sequence
+
+### PR 1: Core Combat Fix (Sections 1, 2, 4, 5, 8, 9)
 
 Follow this order with E2E gates:
 
 1. **Weapon Data System + Data Migration** -- Create JSON files, update robot configs, add ConfigLoader.get_weapon(). No gameplay change yet. Verify configs load correctly.
-2. **Zombie Target Tracking Fix** -- Persistent _current_target, cached re-targeting. **E2E gate: verify consistent zombie damage in logs.**
-3. **Attack Lock System** -- Wire weapons into Robot.gd with windup/recovery state machine. Test Rex (melee) first, then ranged. **E2E gate: verify all ARIAs deal consistent damage.**
-4. **Reload System** -- Add clip tracking, reload state, LLM event, visual indicator.
-5. **Body Blocking** -- Change collision shapes and layers. Behind BODY_BLOCKING_ENABLED toggle. **E2E gate: verify zombies can't pass Rex in chokepoint, no pathfinding jams.**
-6. **Visual Feedback** -- Attack shake, damage shake + flash. Pure polish, zero gameplay impact.
+2. **AttackComponent Extraction** -- Extract attack logic from Robot.gd into AttackComponent.gd. Existing behavior unchanged, just reorganized. Verify E2E still works identically.
+3. **Zombie Target Tracking Fix** -- Persistent _current_target, cached re-targeting. **E2E gate: verify consistent zombie damage in logs.**
+4. **Attack Lock System** -- Wire weapons into AttackComponent with windup/recovery state machine. Test Rex (melee) first, then ranged. **E2E gate: verify all ARIAs deal consistent damage.**
+5. **Body Blocking + MOVEMENT_BLOCKED** -- Change collision shapes and layers. Behind BODY_BLOCKING_ENABLED toggle. Add stuck detection. **E2E gate: verify zombies can't pass Rex in chokepoint, no pathfinding jams.**
+
+### PR 2: Reload System (Section 3)
+
+Ships after PR 1 is merged and verified:
+- Clip tracking, reload state, LLM WEAPON_RELOADING event
+- Reload visual indicator (progress bar)
+- Weapon state in LLM context
+
+### PR 3: Visual Feedback (Section 6)
+
+Ships after PR 2:
+- Attack shake
+- Damage shake + red flash
+- Tween cleanup
