@@ -17,6 +17,11 @@ var _strategic_positions: Dictionary = {}
 func _ready() -> void:
 	_map_config = ConfigLoader.get_map(map_id)
 	_load_strategic_positions()
+	# Ensure navigation is baked
+	var nav_region = $NavigationRegion2D
+	if nav_region and nav_region.navigation_polygon:
+		nav_region.bake_navigation_polygon()
+		print("Map: navigation baked")
 
 func _load_strategic_positions() -> void:
 	for pos_data in _map_config.get("strategic_positions", []):
@@ -62,6 +67,7 @@ signal base_health_changed(current: int, maximum: int)
 
 func take_base_damage(amount: int) -> void:
 	_base_health = max(0, _base_health - amount)
+	GameRecorder.log_base_damage(amount, _base_health)
 	base_health_changed.emit(_base_health, _base_max_health)
 	if _base_health == 0:
 		base_destroyed.emit()

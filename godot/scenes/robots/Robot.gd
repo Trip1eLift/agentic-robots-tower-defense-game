@@ -123,6 +123,28 @@ func _physics_process(delta: float) -> void:
 		return
 	_execute_movement()
 	_check_enemy_in_range()
+	_auto_attack_if_idle()
+
+# Auto-attack nearest enemy when idle (no LLM action yet or between decisions)
+func _auto_attack_if_idle() -> void:
+	if attack_timer.is_stopped() and not _enemies_in_perception.is_empty():
+		var action_name = _current_action.get("action", "idle")
+		if action_name in ["idle", "move", "retreat", ""]:
+			# Find nearest valid enemy
+			var nearest: Node2D = null
+			var nearest_dist := 999999.0
+			for e in _enemies_in_perception:
+				if is_instance_valid(e):
+					var d = global_position.distance_to(e.global_position)
+					if d < nearest_dist:
+						nearest_dist = d
+						nearest = e
+			if nearest:
+				var attack_range = _config.get("base_stats", {}).get("attack_range", 120.0)
+				if nearest_dist <= attack_range:
+					_target_enemy = nearest
+					_perform_attack()
+					attack_timer.start()
 
 func _execute_movement() -> void:
 	if nav_agent.is_navigation_finished():
@@ -147,10 +169,12 @@ func execute_action(action: Dictionary) -> void:
 		return
 	_current_action = action
 	thinking_label.visible = false
+	GameRecorder.log_action_received(robot_id, action)
 	attack_timer.stop()
 	var action_name = action.get("action", "idle")
+	# Build not implemented yet -- move to destination instead of idling
 	if action_name == "build" or action_name == "deploy_turret":
-		action_name = "idle"
+		action_name = "move"
 	match action_name:
 		"move", "retreat":
 			var destination_id = action.get("destination", "")
@@ -189,6 +213,7 @@ func _perform_attack() -> void:
 	if _target_enemy == null or not is_instance_valid(_target_enemy):
 		return
 	var damage = _config["base_stats"]["damage"] * 5
+	GameRecorder.log_attack(robot_id, GameManager.get_enemy_id(_target_enemy), damage)
 	if _target_enemy.has_method("take_damage"):
 		_target_enemy.take_damage(damage)
 	_ammo = max(0, _ammo - 1)
@@ -210,6 +235,7 @@ func _perform_heal(action: Dictionary) -> void:
 				r._health = min(r._max_health, r._health + heal_amount)
 				if r._health_bar:
 					r._health_bar.value = r._health
+				GameRecorder.log_heal(robot_id, r.robot_id, heal_amount)
 				_push_recent_event("HEALED: " + r.robot_id + " for " + str(heal_amount))
 				WebSocketClient.send_state_update(r.robot_id, r._health, r._ammo, r.global_position)
 				return
@@ -219,6 +245,7 @@ func take_damage(amount: int) -> void:
 	_health = max(0, _health - amount)
 	if _health_bar:
 		_health_bar.value = _health
+	GameRecorder.log_damage_taken(robot_id, amount, _health)
 	_push_recent_event("TOOK_DAMAGE: " + str(amount))
 	_fire_event("TAKING_DAMAGE", "health now " + str(_health) + "/" + str(_max_health))
 	WebSocketClient.send_state_update(robot_id, _health, _ammo, global_position)
@@ -229,9 +256,12 @@ func is_alive() -> bool:
 	return _health > 0 and not _is_dead
 
 func _die() -> void:
+	if _is_dead:
+		return
 	_push_recent_event("ROBOT_DIED")
 	_is_dead = true
 	CampaignManager.mark_robot_dead(robot_id)
+	GameRecorder.log_robot_died(robot_id)
 	set_physics_process(false)
 	set_process(false)
 	remove_from_group("robots")
@@ -266,6 +296,7 @@ func _fire_event(event_type: String, event_detail: String) -> void:
 	var commander_broadcast = null
 	if has_node("/root/GameManager"):
 		commander_broadcast = GameManager.get_commander_broadcast()
+	GameRecorder.log_event_sent(robot_id, event_type, event_detail)
 	WebSocketClient.send_event(robot_id, event_type, event_detail, local_context,
 			_player_instructions, commander_broadcast)
 
@@ -305,8 +336,12 @@ func _push_recent_event(event_str: String) -> void:
 
 func _find_enemy_by_id(enemy_id: int) -> Node2D:
 	var enemy = GameManager.get_enemy_by_id(enemy_id)
-	if enemy and is_instance_valid(enemy) and enemy in _enemies_in_perception:
+	if enemy and is_instance_valid(enemy):
 		return enemy
+	# Fallback: attack any enemy in perception if target not found
+	for e in _enemies_in_perception:
+		if is_instance_valid(e):
+			return e
 	return null
 
 func _show_speech(text: String) -> void:

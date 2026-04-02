@@ -19,8 +19,17 @@ func _ready() -> void:
 	btn_prioritize_base.pressed.connect(func(): _broadcast("Prioritize defending the base above all else!"))
 	btn_focus_fire.pressed.connect(func(): _broadcast("Focus all fire on the nearest enemy to the base!"))
 
+var _map_ref: Node = null
+
+func set_map(map: Node) -> void:
+	_map_ref = map
+
 func _process(_delta: float) -> void:
 	_update_robot_stats()
+	if _map_ref and is_instance_valid(_map_ref):
+		base_health_label.text = "Base: " + str(_map_ref.get_base_health()) + "/500"
+
+var _mission_title: String = ""
 
 func reset() -> void:
 	for label in _robot_labels.values():
@@ -28,7 +37,10 @@ func reset() -> void:
 	_robot_labels.clear()
 	_tracked_robots.clear()
 	event_log.clear()
-	wave_label.text = "Wave 1"
+	var mission_id = CampaignManager.get_current_mission()
+	var mission = ConfigLoader.get_mission(mission_id)
+	_mission_title = mission.get("title", "") if not mission.is_empty() else ""
+	wave_label.text = _mission_title + " | Wave 1"
 	base_health_label.text = "Base: 500/500"
 	kill_label.text = "Kills: 0"
 
@@ -65,7 +77,7 @@ func _update_robot_stats() -> void:
 			label.modulate = Color(1, 1, 1)
 
 func update_wave(wave_number: int) -> void:
-	wave_label.text = "Wave " + str(wave_number)
+	wave_label.text = _mission_title + " | Wave " + str(wave_number)
 
 func update_base_health(current: int, maximum: int) -> void:
 	base_health_label.text = "Base: " + str(current) + "/" + str(maximum)

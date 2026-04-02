@@ -6,6 +6,8 @@ extends Node2D
 func _ready() -> void:
 	var mission_id = CampaignManager.get_current_mission()
 	hud.reset()
+	hud.set_map(map)
+	GameRecorder.start_recording(mission_id)
 	GameManager.setup_mission(mission_id, map)
 	map.base_destroyed.connect(_on_base_destroyed)
 	map.base_health_changed.connect(hud.update_base_health)
@@ -19,6 +21,10 @@ func _ready() -> void:
 	var player_instructions: Dictionary = {}
 	if CampaignManager.has_meta("player_instructions"):
 		player_instructions = CampaignManager.get_meta("player_instructions")
+
+	# Wait for WebSocket connection before spawning
+	if not WebSocketClient._is_connected:
+		await WebSocketClient.connected
 
 	# Only spawn robots that survived previous missions
 	var robot_configs = CampaignManager.get_alive_robots()
@@ -47,6 +53,8 @@ func _on_wave_completed(wave_number: int) -> void:
 	GameManager.start_next_wave()
 
 func _on_mission_won() -> void:
+	GameRecorder.stop_recording("WIN")
+	_print_recording_summary()
 	_save_robot_states()
 	var mission = ConfigLoader.get_mission(CampaignManager.get_current_mission())
 	CampaignManager.complete_mission(mission["id"], mission.get("reward_currency", 0))
@@ -54,6 +62,8 @@ func _on_mission_won() -> void:
 	_cleanup_and_exit()
 
 func _on_mission_lost() -> void:
+	GameRecorder.stop_recording("LOSS")
+	_print_recording_summary()
 	_save_robot_states()
 	await _show_result_overlay("MISSION FAILED")
 	_cleanup_and_exit()
@@ -78,6 +88,20 @@ func _save_robot_states() -> void:
 		if is_instance_valid(robot):
 			CampaignManager.save_robot_state(robot.robot_id, robot.get_health(), robot.get_ammo())
 
+func _print_recording_summary() -> void:
+	var s = GameRecorder.get_summary()
+	print("=== MISSION RECORDING SUMMARY ===")
+	print("Mission: ", s.get("mission_id", "?"))
+	print("Attacks: ", s.get("attacks", 0))
+	print("Kills: ", s.get("kills", 0))
+	print("Robot deaths: ", s.get("robot_deaths", 0))
+	print("LLM actions: ", s.get("actions", 0))
+	print("Events sent: ", s.get("events_sent", 0))
+	print("Heals: ", s.get("heals", 0))
+	print("Total events: ", s.get("total_events", 0))
+	print("=================================")
+
 func _cleanup_and_exit() -> void:
 	GameManager._disconnect_all()
-	get_tree().change_scene_to_file("res://scenes/Main.tscn")
+	if is_inside_tree():
+		get_tree().change_scene_to_file.call_deferred("res://scenes/Main.tscn")

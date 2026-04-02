@@ -4,7 +4,7 @@
   "description": "A shambling undead that moves slowly but hits hard. Zombies swarm the base in large groups.",
   "stats": {
     "speed": 2,
-    "damage": 8,
+    "damage": 5,
     "health": 50,
     "armor": 1,
     "attack_range": 40,

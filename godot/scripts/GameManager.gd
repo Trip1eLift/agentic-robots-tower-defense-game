@@ -21,6 +21,23 @@ var _is_spawning: bool = false
 var _next_enemy_id: int = 1
 var _enemy_id_map: Dictionary = {}
 var _id_enemy_map: Dictionary = {}
+var _stalemate_timer: float = 0.0
+const STALEMATE_TIMEOUT_SEC = 30.0
+
+func _process(delta: float) -> void:
+	if _is_wave_active and not _is_spawning:
+		_stalemate_timer += delta
+		# Check if all robots are dead
+		var alive_robots = get_tree().get_nodes_in_group("robots")
+		if alive_robots.is_empty() and not _enemies.is_empty():
+			print("GameManager: all robots dead, triggering mission loss")
+			on_base_destroyed()
+			return
+		# Stalemate timeout (scaled by game speed)
+		var timeout = STALEMATE_TIMEOUT_SEC / Engine.time_scale
+		if _stalemate_timer > timeout:
+			print("GameManager: stalemate timeout after ", STALEMATE_TIMEOUT_SEC, "s")
+			on_base_destroyed()
 
 func setup_mission(mission_id: String, map: Node) -> void:
 	_map = map
@@ -30,6 +47,7 @@ func setup_mission(mission_id: String, map: Node) -> void:
 	_commander_broadcast = ""
 	_is_wave_active = false
 	_is_spawning = false
+	_mission_ended = false
 	# Clean up old robots/enemies from previous mission
 	for r in _robots:
 		if is_instance_valid(r):
@@ -59,6 +77,7 @@ func spawn_robots(robot_configs: Array, player_instructions: Dictionary) -> void
 		var instructions = player_instructions.get(config["id"], "")
 		robot.set_player_instructions(instructions)
 		_robots.append(robot)
+		GameRecorder.log_robot_spawned(config["id"], config.get("class", ""), [robot.global_position.x, robot.global_position.y])
 		# Register with HUD for status tracking
 		var hud = robot.get_tree().get_first_node_in_group("hud")
 		if hud and hud.has_method("register_robot"):
@@ -68,10 +87,13 @@ func start_next_wave() -> void:
 	var waves = _current_mission.get("waves", [])
 	print("GameManager: start_next_wave called, wave=", _current_wave + 1, "/", waves.size(), " robots=", _robots.size())
 	if _current_wave >= waves.size():
-		mission_won.emit()
+		if not _mission_ended:
+			_mission_ended = true
+			mission_won.emit()
 		return
 	_is_wave_active = true
 	var wave_data = waves[_current_wave]
+	GameRecorder.log_wave_started(_current_wave + 1)
 	wave_started.emit(_current_wave + 1)
 	await _spawn_wave_enemies(wave_data)
 
@@ -88,13 +110,14 @@ func _spawn_wave_enemies(wave_data: Dictionary) -> void:
 			var zombie = ZOMBIE_SCENE.instantiate()
 			_map.add_child(zombie)
 			zombie.global_position = spawn_pos + Vector2(randf_range(-30, 30), randf_range(-30, 30))
-			zombie.setup(enemy_config, _map.base_node)
+			zombie.setup(enemy_config, _map)
 			zombie.died.connect(_on_enemy_died)
 			_enemies.append(zombie)
 			var eid = _next_enemy_id
 			_next_enemy_id += 1
 			_enemy_id_map[zombie] = eid
 			_id_enemy_map[eid] = zombie
+			GameRecorder.log_enemy_spawned(eid, enemy_group["type"], [zombie.global_position.x, zombie.global_position.y])
 			await get_tree().create_timer(interval).timeout
 	_is_spawning = false
 	# Check if all enemies already died during spawning
@@ -110,12 +133,14 @@ func _on_enemy_died(enemy: Node2D) -> void:
 		_id_enemy_map.erase(eid)
 	_enemies.erase(enemy)
 	_kill_count += 1
+	_stalemate_timer = 0.0
+	GameRecorder.log_enemy_killed(eid)
 	kill_count_changed.emit(_kill_count)
 	_notify_robots_of_kill(enemy, eid)
 	if _enemies.is_empty() and _is_wave_active and not _is_spawning:
 		_is_wave_active = false
 		_current_wave += 1
-		print("GameManager: wave completed, moving to wave ", _current_wave + 1)
+		GameRecorder.log_wave_completed(_current_wave)
 		wave_completed.emit(_current_wave)
 
 func _notify_robots_of_kill(enemy: Node2D, enemy_id: int) -> void:
@@ -132,7 +157,12 @@ func get_enemy_id(enemy: Node2D) -> int:
 func get_enemy_by_id(enemy_id: int) -> Node2D:
 	return _id_enemy_map.get(enemy_id, null)
 
+var _mission_ended: bool = false
+
 func on_base_destroyed() -> void:
+	if _mission_ended:
+		return
+	_mission_ended = true
 	_is_wave_active = false
 	mission_lost.emit()
 
