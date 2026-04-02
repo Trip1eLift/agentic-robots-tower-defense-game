@@ -20,6 +20,8 @@ ConfigLoader="*res://scripts/ConfigLoader.gd"
 WebSocketClient="*res://scripts/WebSocketClient.gd"
 CampaignManager="*res://scripts/CampaignManager.gd"
 GameManager="*res://scripts/GameManager.gd"
+GameRecorder="*res://scripts/GameRecorder.gd"
+AutoPlay="*res://scripts/AutoPlay.gd"
 
 [editor_plugins]
 

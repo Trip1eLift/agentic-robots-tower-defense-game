@@ -86,6 +86,24 @@ Every implementation chunk MUST include both:
 
 Both test types must pass before committing. Integration tests are not optional and not deferred -- they ship in the same PR as the code they test. If a component connects to other components, it needs integration tests.
 
+### E2E Debug Loop
+
+After implementing gameplay changes, run the automated E2E pipeline and iterate until issues are resolved:
+
+```
+1. Run E2E:  bash run_e2e.sh (or Godot --autoplay --speed=5)
+2. Analyze:  python analyze_recording.py
+3. Identify: read the analyzer output for [BUG] and [WARN] flags
+4. Fix:      make code changes to address the issues
+5. Repeat:   go back to step 1
+```
+
+Do NOT stop after one run. Keep iterating until the analyzer shows no [BUG] flags and gameplay metrics are reasonable (enemies killed, robots surviving, waves completing). Only pause to ask the user when stuck on a design decision, not for permission to keep iterating.
+
+The recording log (`godot/e2e_recording.log`) streams events in real-time. If events stop increasing while the game is running, something is stuck -- investigate immediately. Use `--speed=5` for faster iteration cycles.
+
+**Work in parallel:** Run the game in the background while actively fixing code. Do not wait for a full E2E run to complete before starting fixes. Read the live recording log, identify issues from partial data, fix code, and restart. The game and code fixes happen concurrently.
+
 ### Implementor Principles
 - **Speed over perfection.** Ship working code, iterate, fix forward. Don't gold-plate.
 - **Parallel by default.** Independent tasks run simultaneously via worktrees or branches.

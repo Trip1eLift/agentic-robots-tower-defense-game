@@ -2,7 +2,7 @@ extends Node
 
 signal mission_unlocked(mission_id: String)
 
-const SAVE_PATH = "user://campaign_save.json"
+const SAVE_PATH = "res://campaign_save.json"
 
 var _currency: int = 0
 var _completed_missions: Array[String] = []
