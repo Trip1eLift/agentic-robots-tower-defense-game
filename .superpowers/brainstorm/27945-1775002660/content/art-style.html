@@ -1,0 +1,42 @@
+<h2>Pixel Art Style Direction</h2>
+<p class="subtitle">Minecraft-inspired blocky world, but ARIA units are prettier and more detailed. Pick the approach that fits best.</p>
+
+<div class="options">
+  <div class="option" data-choice="a" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>16-bit SNES Style (Recommended)</h3>
+      <p><strong>ARIA units: 32x32</strong> with 8-12 color palettes per character. Smooth, expressive feminine silhouettes with class-distinct profiles (bulky vanguard, slim striker, flowing medic). Hair and eye detail visible.</p>
+      <p><strong>World: 16x16 tiles</strong> with chunky Minecraft-like terrain. Blocky rubble, simple grass/dirt, crude walls. High contrast between pretty characters and rough world.</p>
+      <p><strong>Zombies: 32x32</strong> with fewer colors (4-6), grotesque blocky shapes. Clearly enemies at a glance.</p>
+      <p><em>Think: Final Fantasy VI characters on a Minecraft map</em></p>
+    </div>
+  </div>
+
+  <div class="option" data-choice="b" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>Uniform 32x32 Everything</h3>
+      <p><strong>All sprites 32x32</strong> with consistent detail level. ARIA units get more color depth (10-14 colors) vs world tiles (4-6 colors). World uses 32x32 tiles too -- less blocky than Minecraft but still chunky.</p>
+      <p><strong>ARIA units:</strong> Detailed with visible armor, weapons, hair color. Each class has a unique silhouette and color scheme.</p>
+      <p><strong>Zombies:</strong> Same size but muddier colors, asymmetric shapes.</p>
+      <p><em>Think: Stardew Valley character detail on a post-apocalyptic map</em></p>
+    </div>
+  </div>
+
+  <div class="option" data-choice="c" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>48x48 ARIA, 16x16 World</h3>
+      <p><strong>ARIA units: 48x48</strong> -- large, detailed, almost chibi-anime style. Visible facial expressions, flowing hair, detailed weapons and armor plating. The stars of the show.</p>
+      <p><strong>World: 16x16 tiles</strong> -- very blocky Minecraft terrain. Crude but functional.</p>
+      <p><strong>Zombies: 32x32</strong> -- mid-size, threatening but clearly less detailed than ARIA.</p>
+      <p><em>Think: Detailed character portraits walking on a low-res blocky world</em></p>
+    </div>
+  </div>
+</div>
+
+<div class="section" style="margin-top: 2rem;">
+  <h3>Current State</h3>
+  <p>All sprites are simple colored rectangles: robots 32x32, zombie 32x32, base 64x64, walls/barricades 16x16. The game is playable but visually bare.</p>
+</div>

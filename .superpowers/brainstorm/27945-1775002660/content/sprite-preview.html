@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Sprite Preview</title>
+<style>
+  body { background: #1a1a2e; color: #eee; font-family: monospace; padding: 2rem; }
+  h1 { color: #4ae0ff; text-align: center; }
+  h2 { color: #88aacc; margin-top: 2rem; border-bottom: 1px solid #334; padding-bottom: 0.5rem; }
+  .grid { display: flex; flex-wrap: wrap; gap: 2rem; margin: 1rem 0; }
+  .sprite-card {
+    background: #0d0d1a;
+    border: 1px solid #334;
+    border-radius: 8px;
+    padding: 1rem;
+    text-align: center;
+  }
+  .sprite-card canvas { image-rendering: pixelated; border: 1px solid #222; }
+  .sprite-card p { margin: 0.5rem 0 0; font-size: 12px; color: #88aacc; }
+  .sprite-card .name { color: #eee; font-size: 14px; font-weight: bold; }
+  .tile-grid { display: flex; flex-wrap: wrap; gap: 1rem; }
+  .tile-card { text-align: center; }
+  .tile-card canvas { image-rendering: pixelated; border: 1px solid #222; }
+  .tile-card p { font-size: 11px; color: #88aacc; margin-top: 4px; }
+</style>
+</head>
+<body>
+<h1>ARIA: Defenders of Duskwall -- Sprite Preview</h1>
+<p style="text-align:center;color:#667;">All sprites shown at 6x zoom. Actual sizes in parentheses.</p>
+
+<h2>ARIA Units (48x48)</h2>
+<div class="grid" id="ariaGrid"></div>
+
+<h2>Enemies (32x32)</h2>
+<div class="grid" id="enemyGrid"></div>
+
+<h2>Structures</h2>
+<div class="grid" id="structGrid"></div>
+
+<h2>Map Tiles (16x16)</h2>
+<div class="tile-grid" id="tileGrid"></div>
+
+<script>
+// Load images and render them scaled up on canvases
+const sprites = {
+  aria: [
+    {name: "Rex (Vanguard)", file: "aria/rex_sprite.png", size: 48, scale: 6, color: "#e65555"},
+    {name: "Aurora (Striker)", file: "aria/aurora_sprite.png", size: 48, scale: 6, color: "#e6b832"},
+    {name: "Lily (Medic)", file: "aria/lily_sprite.png", size: 48, scale: 6, color: "#55cc66"},
+    {name: "Hana (Architect)", file: "aria/hana_sprite.png", size: 48, scale: 6, color: "#5599dd"},
+  ],
+  enemy: [
+    {name: "Zombie", file: "enemies/zombie_sprite.png", size: 32, scale: 6, color: "#667755"},
+  ],
+  struct: [
+    {name: "Base (64x64)", file: "structures/base.png", size: 64, scale: 4, color: "#8899aa"},
+    {name: "Wall (16x16)", file: "structures/wall.png", size: 16, scale: 6, color: "#8b5533"},
+    {name: "Barricade (16x16)", file: "structures/barricade.png", size: 16, scale: 6, color: "#b4a078"},
+  ],
+  tile: [
+    {name: "Dirt", file: "tiles/dirt.png", size: 16, scale: 6},
+    {name: "Dead Grass", file: "tiles/dead_grass.png", size: 16, scale: 6},
+    {name: "Rubble", file: "tiles/rubble.png", size: 16, scale: 6},
+    {name: "Road", file: "tiles/road_cracked.png", size: 16, scale: 6},
+    {name: "Rust Metal", file: "tiles/rust_metal.png", size: 16, scale: 6},
+    {name: "Dead Tree", file: "tiles/dead_tree.png", size: 16, scale: 6},
+    {name: "Bridge H", file: "tiles/bridge_h.png", size: 16, scale: 6},
+    {name: "Bridge V", file: "tiles/bridge_v.png", size: 16, scale: 6},
+  ]
+};
+
+// We can't load local files from a different server, so we'll draw them
+// by loading via fetch from the godot assets path
+// Actually, the server only serves from the brainstorm dir. Let's use
+// a data approach -- read the PNGs as base64 and embed them.
+// For now, let's show placeholder colored rectangles with the names.
+
+function createSpriteCard(container, info) {
+  const card = document.createElement('div');
+  card.className = 'sprite-card';
+
+  const canvas = document.createElement('canvas');
+  const w = info.size * info.scale;
+  canvas.width = w;
+  canvas.height = w;
+  canvas.style.width = w + 'px';
+  canvas.style.height = w + 'px';
+
+  const img = new Image();
+  img.onload = function() {
+    const ctx = canvas.getContext('2d');
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(img, 0, 0, w, w);
+  };
+  // Try loading from project assets
+  img.src = '/asset/' + info.file;
+
+  // Fallback: draw colored rect with label
+  img.onerror = function() {
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = info.color || '#555';
+    ctx.fillRect(0, 0, w, w);
+    ctx.fillStyle = '#fff';
+    ctx.font = '14px monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText(info.name, w/2, w/2);
+    ctx.fillText(info.size + 'x' + info.size, w/2, w/2 + 18);
+  };
+
+  const nameP = document.createElement('p');
+  nameP.className = 'name';
+  nameP.style.color = info.color || '#eee';
+  nameP.textContent = info.name;
+
+  const sizeP = document.createElement('p');
+  sizeP.textContent = info.size + 'x' + info.size + ' @ ' + info.scale + 'x';
+
+  card.appendChild(canvas);
+  card.appendChild(nameP);
+  card.appendChild(sizeP);
+  container.appendChild(card);
+}
+
+sprites.aria.forEach(s => createSpriteCard(document.getElementById('ariaGrid'), s));
+sprites.enemy.forEach(s => createSpriteCard(document.getElementById('enemyGrid'), s));
+sprites.struct.forEach(s => createSpriteCard(document.getElementById('structGrid'), s));
+sprites.tile.forEach(s => createSpriteCard(document.getElementById('tileGrid'), s));
+</script>
+</body>
+</html>
