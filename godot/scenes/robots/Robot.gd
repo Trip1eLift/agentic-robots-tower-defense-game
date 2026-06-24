@@ -391,3 +391,6 @@ func _show_speech(text: String) -> void:
 
 func get_health() -> int:
 	return _health
+
+func get_ammo() -> int:
+	return 0
