@@ -4,7 +4,7 @@ A 2D tower defense game where you command AI-driven combat units through natural
 
 ## Demo
 
-**Gameplay video:** *(upload to YouTube/Google Drive and link here — file is too large for GitHub)*
+**[Watch gameplay video on YouTube](https://www.youtube.com/watch?v=VaTtaU1M5T0)**
 
 | Introduction | Pre-Combat Briefing |
 |:---:|:---:|
