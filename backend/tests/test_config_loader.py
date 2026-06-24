@@ -38,10 +38,48 @@ def test_load_mission_config():
 def test_load_enemy_config():
     loader = ConfigLoader(DATA_DIR)
     enemy = loader.get_enemy("zombie")
-    assert enemy["stats"]["health"] == 50
+    assert enemy["stats"]["health"] == 80
 
 
 def test_missing_robot_raises():
     loader = ConfigLoader(DATA_DIR)
     with pytest.raises(KeyError):
         loader.get_robot("nonexistent_robot")
+
+
+def test_load_weapon_config():
+    loader = ConfigLoader(DATA_DIR)
+    weapon = loader.get_weapon("broadsword")
+    assert weapon["name"] == "Vanguard Broadsword"
+    assert weapon["type"] == "melee"
+    assert weapon["damage"] == 18
+    assert weapon["range"] == 60
+    assert weapon["attack_speed"] == 1.5
+
+
+def test_load_all_weapons():
+    loader = ConfigLoader(DATA_DIR)
+    weapons = loader.get_all_weapons()
+    assert len(weapons) == 4
+    weapon_ids = {w["id"] for w in weapons}
+    assert weapon_ids == {"broadsword", "sniper_rifle", "smg", "energy_pistol"}
+
+
+def test_missing_weapon_raises():
+    loader = ConfigLoader(DATA_DIR)
+    with pytest.raises(KeyError):
+        loader.get_weapon("nonexistent_weapon")
+
+
+def test_ranged_weapon_has_clip_fields():
+    loader = ConfigLoader(DATA_DIR)
+    sniper = loader.get_weapon("sniper_rifle")
+    assert sniper["clip_size"] == 5
+    assert sniper["reload_time"] == 3.0
+
+
+def test_melee_weapon_has_no_clip_fields():
+    loader = ConfigLoader(DATA_DIR)
+    sword = loader.get_weapon("broadsword")
+    assert "clip_size" not in sword
+    assert "reload_time" not in sword

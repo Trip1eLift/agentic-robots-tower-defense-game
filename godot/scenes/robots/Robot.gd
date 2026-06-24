@@ -10,11 +10,11 @@ signal event_detected(robot_id: String, event_type: String, event_detail: String
 @onready var thinking_label: Label = $ThinkingLabel
 @onready var speech_timer: Timer = $SpeechTimer
 @onready var attack_timer: Timer = $AttackTimer
+@onready var attack_component: Node = $AttackComponent
 
 var _config: Dictionary = {}
 var _health: int = 0
 var _max_health: int = 0
-var _ammo: int = 0
 var _speed: float = 100.0
 var _current_action: Dictionary = {}
 var _target_enemy: Node2D = null
@@ -22,14 +22,19 @@ var _player_instructions: String = ""
 var _enemies_in_perception: Array[Node2D] = []
 var _recent_events: Array[String] = []
 var _map: Node = null
-var _ammo_low_fired: bool = false
 var _is_dead: bool = false
 var _event_cooldowns: Dictionary = {}
 var _health_bar: ProgressBar = null
 var _name_label_node: Label = null
 
 const MAX_RECENT_EVENTS = 5
+const BODY_BLOCKING_ENABLED = true
 const EVENT_COOLDOWN_MS = 2000
+
+var _last_move_position: Vector2 = Vector2.ZERO
+var _stuck_timer: float = 0.0
+const STUCK_THRESHOLD_PX = 5.0
+const STUCK_TIMEOUT_SEC = 2.0
 
 func setup(config: Dictionary, map: Node) -> void:
 	_config = config
@@ -37,7 +42,6 @@ func setup(config: Dictionary, map: Node) -> void:
 	var stats = config["base_stats"]
 	_health = stats["health"]
 	_max_health = stats["health"]
-	_ammo = stats["ammo"]
 	_speed = stats["speed"] * 20.0
 	robot_id = config["id"]
 	_load_class_sprite(config.get("class", ""))
@@ -45,15 +49,18 @@ func setup(config: Dictionary, map: Node) -> void:
 	speech_label.visible = false
 	speech_timer.wait_time = 3.0
 	speech_timer.one_shot = true
-	attack_timer.wait_time = 1.0
-	attack_timer.one_shot = false
-	attack_timer.timeout.connect(_on_attack_timer)
 	thinking_label.text = "..."
 	thinking_label.visible = false
 	perception_area.body_entered.connect(_on_body_entered_perception)
 	perception_area.body_exited.connect(_on_body_exited_perception)
 	WebSocketClient.action_received.connect(_on_action_received)
-	WebSocketClient.register_robot(robot_id, _health, _ammo, global_position)
+
+	var weapon_id = config.get("weapon_id", "broadsword")
+	var weapon = ConfigLoader.get_weapon(weapon_id)
+	attack_component.setup(weapon, attack_timer)
+	attack_component.attack_damage_applied.connect(_on_attack_damage_applied)
+
+	WebSocketClient.register_robot(robot_id, _health, global_position, _build_weapon_state())
 	_setup_health_bar()
 	_execute_default_spawn_action()
 
@@ -93,7 +100,6 @@ func _setup_health_bar() -> void:
 	_health_bar.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 	_health_bar.position = Vector2(-30, -38)
 	_health_bar.show_percentage = false
-	# Force the height by overriding theme styles
 	var bg = StyleBoxFlat.new()
 	bg.bg_color = Color(0.2, 0.2, 0.2)
 	bg.set_content_margin_all(0)
@@ -137,37 +143,56 @@ func _can_fire_event(event_type: String) -> bool:
 	_event_cooldowns[event_type] = now
 	return true
 
-func resupply_ammo() -> void:
-	_ammo = _config["base_stats"]["ammo"]
-	_ammo_low_fired = false
-
 func _physics_process(delta: float) -> void:
 	if not is_alive():
 		return
-	_execute_movement()
+	if not attack_component.is_winding_up():
+		_execute_movement()
 	_check_enemy_in_range()
 	_auto_attack_if_idle()
+	_update_stuck_detection(delta)
 
-# Auto-attack nearest enemy when idle (no LLM action yet or between decisions)
+func _update_stuck_detection(delta: float) -> void:
+	var action_name = _current_action.get("action", "idle")
+	if action_name not in ["move", "retreat", "attack", "snipe"]:
+		_stuck_timer = 0.0
+		_last_move_position = global_position
+		return
+	if nav_agent.is_navigation_finished():
+		_stuck_timer = 0.0
+		_last_move_position = global_position
+		return
+	var moved = global_position.distance_to(_last_move_position)
+	if moved > STUCK_THRESHOLD_PX:
+		_stuck_timer = 0.0
+		_last_move_position = global_position
+		return
+	_stuck_timer += delta
+	if _stuck_timer >= STUCK_TIMEOUT_SEC:
+		_stuck_timer = 0.0
+		_last_move_position = global_position
+		_fire_event("MOVEMENT_BLOCKED",
+			"stuck moving to " + str(nav_agent.target_position))
+
 func _auto_attack_if_idle() -> void:
-	if attack_timer.is_stopped() and not _enemies_in_perception.is_empty():
-		var action_name = _current_action.get("action", "idle")
-		if action_name in ["idle", "move", "retreat", "", "build", "deploy_turret"]:
-			# Find nearest valid enemy
-			var nearest: Node2D = null
-			var nearest_dist := 999999.0
-			for e in _enemies_in_perception:
-				if is_instance_valid(e):
-					var d = global_position.distance_to(e.global_position)
-					if d < nearest_dist:
-						nearest_dist = d
-						nearest = e
-			if nearest:
-				var attack_range = _config.get("base_stats", {}).get("attack_range", 120.0)
-				if nearest_dist <= attack_range:
-					_target_enemy = nearest
-					_perform_attack()
-					attack_timer.start()
+	if attack_component.is_winding_up():
+		return
+	if attack_component.has_target() or _enemies_in_perception.is_empty():
+		return
+	var action_name = _current_action.get("action", "idle")
+	if action_name in ["idle", "move", "retreat", "", "build", "deploy_turret"]:
+		var nearest: Node2D = null
+		var nearest_dist := 999999.0
+		for e in _enemies_in_perception:
+			if is_instance_valid(e):
+				var d = global_position.distance_to(e.global_position)
+				if d < nearest_dist:
+					nearest_dist = d
+					nearest = e
+		if nearest:
+			var weapon_range = attack_component.get_weapon_range()
+			if nearest_dist <= weapon_range:
+				attack_component.start_attack(nearest)
 
 func _execute_movement() -> void:
 	if nav_agent.is_navigation_finished():
@@ -178,11 +203,11 @@ func _execute_movement() -> void:
 	move_and_slide()
 
 func _check_enemy_in_range() -> void:
-	var attack_range = _config.get("base_stats", {}).get("attack_range", 120.0)
+	var weapon_range = attack_component.get_weapon_range()
 	for enemy in _enemies_in_perception:
 		if is_instance_valid(enemy):
 			var dist = global_position.distance_to(enemy.global_position)
-			if dist <= attack_range:
+			if dist <= weapon_range:
 				_fire_event("ENEMY_IN_RANGE",
 					str(GameManager.get_enemy_id(enemy)) + " at distance " + str(int(dist)))
 				return
@@ -190,10 +215,14 @@ func _check_enemy_in_range() -> void:
 func execute_action(action: Dictionary) -> void:
 	if _is_dead:
 		return
+	# Buffer action if winding up
+	if attack_component.is_winding_up():
+		attack_component.buffer_action(action)
+		return
 	_current_action = action
 	thinking_label.visible = false
 	GameRecorder.log_action_received(robot_id, action)
-	attack_timer.stop()
+	attack_component.stop_attack()
 	var action_name = action.get("action", "idle")
 	# Build not implemented yet -- move to destination instead of idling
 	if action_name == "build" or action_name == "deploy_turret":
@@ -207,8 +236,7 @@ func execute_action(action: Dictionary) -> void:
 		"attack", "snipe":
 			_target_enemy = _find_enemy_by_id(action.get("target_id", -1))
 			if _target_enemy:
-				_perform_attack()
-				attack_timer.start()
+				attack_component.start_attack(_target_enemy)
 		"heal":
 			_perform_heal(action)
 		"idle":
@@ -219,56 +247,41 @@ func execute_action(action: Dictionary) -> void:
 		if hud and hud.has_method("add_log_entry"):
 			hud.add_log_entry(_config.get("name", robot_id) + ": " + reason)
 
-func _on_attack_timer() -> void:
-	var action_name = _current_action.get("action", "idle")
-	if not ["attack", "snipe"].has(action_name):
-		attack_timer.stop()
-		return
-	if _target_enemy == null or not is_instance_valid(_target_enemy):
-		_target_enemy = _find_enemy_by_id(_current_action.get("target_id", -1))
-	if _target_enemy == null or not is_instance_valid(_target_enemy):
-		attack_timer.stop()
-		_fire_event("ENEMY_ELIMINATED", "current target lost, requesting new orders")
-		return
-	_perform_attack()
+func _on_attack_damage_applied(target: Node2D, damage: int) -> void:
+	GameRecorder.log_attack(robot_id, GameManager.get_enemy_id(target), damage)
+	if target.has_method("take_damage"):
+		target.take_damage(damage)
+	_push_recent_event("ENEMY_ATTACKED: " + str(target.name))
+	WebSocketClient.send_state_update(robot_id, _health, global_position, _build_weapon_state())
 
-func _perform_attack() -> void:
-	if _target_enemy == null or not is_instance_valid(_target_enemy):
-		return
-	var attack_range = _config.get("base_stats", {}).get("attack_range", 120.0)
-	var dist = global_position.distance_to(_target_enemy.global_position)
-	if dist > attack_range:
-		# Too far -- move toward target instead
-		nav_agent.target_position = _target_enemy.global_position
-		return
-	var damage = _config["base_stats"]["damage"] * 3
-	GameRecorder.log_attack(robot_id, GameManager.get_enemy_id(_target_enemy), damage)
-	if _target_enemy.has_method("take_damage"):
-		_target_enemy.take_damage(damage)
-	_ammo = max(0, _ammo - 1)
-	_push_recent_event("ENEMY_ATTACKED: " + str(_target_enemy.name))
-	if not _ammo_low_fired and (_ammo == 0 or (_ammo / float(_config["base_stats"]["ammo"])) < 0.2):
-		_ammo_low_fired = true
-		_fire_event("AMMO_LOW", "ammo at " + str(_ammo))
-	WebSocketClient.send_state_update(robot_id, _health, _ammo, global_position)
+func _build_weapon_state() -> Dictionary:
+	var weapon = attack_component.get_weapon()
+	return {
+		"weapon_name": weapon.get("name", "Unknown"),
+		"clip": weapon.get("clip_size", 0),
+		"max_clip": weapon.get("clip_size", 0),
+		"is_reloading": false
+	}
 
 func _perform_heal(action: Dictionary) -> void:
 	var target_id = action.get("target_id", null)
 	if target_id == null:
 		return
-	# Find ally robot by matching robot_id or sequential index
 	for r in get_tree().get_nodes_in_group("robots"):
 		if is_instance_valid(r) and r != self and r.is_alive():
 			if r.robot_id == str(target_id) or r.robot_id.ends_with(str(target_id)):
 				var heal_amount = _config["base_stats"].get("intelligence", 5) * 5
-				r._health = min(r._max_health, r._health + heal_amount)
-				if r._health_bar:
-					r._health_bar.value = r._health
+				r.heal(heal_amount)
 				GameRecorder.log_heal(robot_id, r.robot_id, heal_amount)
 				_push_recent_event("HEALED: " + r.robot_id + " for " + str(heal_amount))
-				WebSocketClient.send_state_update(r.robot_id, r._health, r._ammo, r.global_position)
+				WebSocketClient.send_state_update(r.robot_id, r._health, r.global_position, {})
 				return
 	_push_recent_event("HEAL_FAILED: target " + str(target_id) + " not found")
+
+func heal(amount: int) -> void:
+	_health = min(_max_health, _health + amount)
+	if _health_bar:
+		_health_bar.value = _health
 
 func take_damage(amount: int) -> void:
 	_health = max(0, _health - amount)
@@ -277,7 +290,7 @@ func take_damage(amount: int) -> void:
 	GameRecorder.log_damage_taken(robot_id, amount, _health)
 	_push_recent_event("TOOK_DAMAGE: " + str(amount))
 	_fire_event("TAKING_DAMAGE", "health now " + str(_health) + "/" + str(_max_health))
-	WebSocketClient.send_state_update(robot_id, _health, _ammo, global_position)
+	WebSocketClient.send_state_update(robot_id, _health, global_position, _build_weapon_state())
 	if _health == 0:
 		_die()
 
@@ -297,11 +310,9 @@ func _die() -> void:
 	collision_layer = 0
 	collision_mask = 0
 	perception_area.monitoring = false
-	attack_timer.stop()
-	# Disconnect from backend so no more actions arrive for this robot
+	attack_component.stop_attack()
 	if WebSocketClient.action_received.is_connected(_on_action_received):
 		WebSocketClient.action_received.disconnect(_on_action_received)
-	# Swap to dead sprite instead of hiding
 	_load_dead_sprite(_config.get("class", ""))
 	modulate = Color(0.7, 0.7, 0.7, 0.8)
 
@@ -369,7 +380,6 @@ func _find_enemy_by_id(enemy_id: int) -> Node2D:
 	var enemy = GameManager.get_enemy_by_id(enemy_id)
 	if enemy and is_instance_valid(enemy):
 		return enemy
-	# Fallback: attack any enemy in perception if target not found
 	for e in _enemies_in_perception:
 		if is_instance_valid(e):
 			return e
@@ -383,4 +393,4 @@ func get_health() -> int:
 	return _health
 
 func get_ammo() -> int:
-	return _ammo
+	return 0

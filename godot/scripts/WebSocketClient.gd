@@ -49,22 +49,22 @@ func _handle_message(raw: String) -> void:
 	if data.has("robot_id") and data.has("action"):
 		action_received.emit(data["robot_id"], data["action"])
 
-func register_robot(robot_id: String, health: int, ammo: int, position: Vector2) -> void:
+func register_robot(robot_id: String, health: int, position: Vector2, weapon_state: Dictionary = {}) -> void:
 	_send({
 		"type": "register_robot",
 		"robot_id": robot_id,
 		"health": health,
-		"ammo": ammo,
-		"position": [position.x, position.y]
+		"position": [position.x, position.y],
+		"weapon_state": weapon_state
 	})
 
-func send_state_update(robot_id: String, health: int, ammo: int, position: Vector2) -> void:
+func send_state_update(robot_id: String, health: int, position: Vector2, weapon_state: Dictionary = {}) -> void:
 	_send({
 		"type": "state_update",
 		"robot_id": robot_id,
 		"health": health,
-		"ammo": ammo,
-		"position": [position.x, position.y]
+		"position": [position.x, position.y],
+		"weapon_state": weapon_state
 	})
 
 func send_event(robot_id: String, event_type: String, event_detail: String,

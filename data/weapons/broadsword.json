@@ -1,0 +1,9 @@
+{
+  "id": "broadsword",
+  "name": "Vanguard Broadsword",
+  "class": "broadsword",
+  "type": "melee",
+  "damage": 18,
+  "range": 60,
+  "attack_speed": 1.5
+}

@@ -1,0 +1,342 @@
+<h2>ARIA Design: Armored Mech-Girls vs Chibi Anime</h2>
+<p class="subtitle">Side-by-side pixel mockups of Rex (Vanguard) in both styles at 48x48, shown enlarged 6x</p>
+
+<div class="split">
+  <div class="mockup">
+    <div class="mockup-header">A: Armored Mech-Girl (Nier vibes)</div>
+    <div class="mockup-body" style="display:flex;justify-content:center;padding:2rem;background:#1a1a2e;">
+      <!-- Rex Vanguard - Armored Mech-Girl style, 48x48 shown at 6x -->
+      <div style="position:relative;">
+        <canvas id="mechRex" width="288" height="288" style="image-rendering:pixelated;border:1px solid #333;"></canvas>
+        <p style="color:#999;font-size:12px;text-align:center;margin-top:8px;">48x48 @ 6x zoom</p>
+      </div>
+    </div>
+  </div>
+  <div class="mockup">
+    <div class="mockup-header">B: Chibi Anime Robot</div>
+    <div class="mockup-body" style="display:flex;justify-content:center;padding:2rem;background:#1a1a2e;">
+      <!-- Rex Vanguard - Chibi style, 48x48 shown at 6x -->
+      <div style="position:relative;">
+        <canvas id="chibiRex" width="288" height="288" style="image-rendering:pixelated;border:1px solid #333;"></canvas>
+        <p style="color:#999;font-size:12px;text-align:center;margin-top:8px;">48x48 @ 6x zoom</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function drawPixel(ctx, x, y, color, scale) {
+  ctx.fillStyle = color;
+  ctx.fillRect(x * scale, y * scale, scale, scale);
+}
+
+function drawMechRex() {
+  const c = document.getElementById('mechRex');
+  const ctx = c.getContext('2d');
+  const s = 6; // scale
+
+  // Background
+  ctx.fillStyle = '#1a1a2e';
+  ctx.fillRect(0, 0, 288, 288);
+
+  const px = (x, y, col) => drawPixel(ctx, x, y, col, s);
+
+  // -- Armored Mech-Girl Rex (Vanguard) --
+  // Proportional feminine form, heavy red armor plating, visible weapon
+
+  // Hair (dark red-brown)
+  const hair = '#8b2020';
+  const hairLight = '#b03030';
+  // Skin
+  const skin = '#f0c8a0';
+  const skinShadow = '#d4a878';
+  // Armor
+  const armorDark = '#8b1a1a';
+  const armor = '#cc3333';
+  const armorLight = '#e05555';
+  const armorHighlight = '#ff7777';
+  // Metal
+  const metal = '#667788';
+  const metalLight = '#8899aa';
+  // Eye
+  const eye = '#40e0ff';
+  // Dark
+  const dark = '#2a1515';
+  const outline = '#1a0a0a';
+
+  // Hair top
+  [19,20,21,22,23,24,25,26,27,28].forEach(x => px(x, 6, hair));
+  [18,19,20,21,22,23,24,25,26,27,28,29].forEach(x => px(x, 7, hair));
+  [17,18,19,20,21,22,23,24,25,26,27,28,29,30].forEach(x => px(x, 8, hair));
+  [17,18,29,30].forEach(x => px(x, 9, hair));
+  [16,17,30,31].forEach(x => px(x, 10, hair));
+  [16,17,30,31].forEach(x => px(x, 11, hair));
+  // Hair highlights
+  [21,22,25].forEach(x => px(x, 7, hairLight));
+  [20,21,26].forEach(x => px(x, 8, hairLight));
+
+  // Face
+  [19,20,21,22,23,24,25,26,27,28].forEach(x => px(x, 9, skin));
+  [18,19,20,21,22,23,24,25,26,27,28,29].forEach(x => px(x, 10, skin));
+  [18,19,20,21,22,23,24,25,26,27,28,29].forEach(x => px(x, 11, skin));
+  [19,20,21,22,23,24,25,26,27,28].forEach(x => px(x, 12, skin));
+  [20,21,22,23,24,25,26,27].forEach(x => px(x, 13, skinShadow));
+  // Eyes
+  px(21, 10, eye); px(22, 10, eye);
+  px(26, 10, eye); px(27, 10, eye);
+  px(21, 11, dark); px(22, 11, '#20a0cc');
+  px(26, 11, dark); px(27, 11, '#20a0cc');
+  // Mouth
+  px(23, 12, '#d08070'); px(24, 12, '#d08070');
+
+  // Neck
+  [22,23,24,25].forEach(x => px(x, 14, skin));
+
+  // Shoulder armor (heavy plating)
+  [13,14,15,16,17,18,19].forEach(x => px(x, 15, armorDark));
+  [28,29,30,31,32,33,34].forEach(x => px(x, 15, armorDark));
+  [13,14,15,16,17,18,19].forEach(x => px(x, 16, armor));
+  [28,29,30,31,32,33,34].forEach(x => px(x, 16, armor));
+  [14,15,16,17,18].forEach(x => px(x, 17, armor));
+  [29,30,31,32,33].forEach(x => px(x, 17, armor));
+  // Shoulder highlights
+  [15,16].forEach(x => px(x, 15, armorLight));
+  [31,32].forEach(x => px(x, 15, armorLight));
+
+  // Torso armor
+  for (let y = 15; y <= 26; y++) {
+    for (let x = 20; x <= 27; x++) {
+      px(x, y, armor);
+    }
+  }
+  // Chest plate highlight
+  [22,23,24,25].forEach(x => px(x, 16, armorLight));
+  [22,23,24,25].forEach(x => px(x, 17, armorLight));
+  [23,24].forEach(x => px(x, 18, armorHighlight));
+  // Waist
+  for (let x = 19; x <= 28; x++) px(x, 27, armorDark);
+
+  // Arms
+  for (let y = 18; y <= 26; y++) {
+    px(15, y, armor); px(16, y, armor); px(17, y, armorDark);
+    px(30, y, armor); px(31, y, armor); px(32, y, armorDark);
+  }
+  // Hands (skin)
+  px(15, 27, skin); px(16, 27, skin);
+  px(31, 27, skin); px(32, 27, skin);
+
+  // Shield (left hand) - large metal shield
+  for (let y = 20; y <= 30; y++) {
+    for (let x = 10; x <= 15; x++) {
+      px(x, y, metal);
+    }
+  }
+  [11,12,13,14].forEach(x => px(x, 21, metalLight));
+  [12,13].forEach(x => px(x, 22, metalLight));
+  // Shield emblem
+  px(12, 25, armorLight); px(13, 25, armorLight);
+  px(12, 26, armor); px(13, 26, armor);
+
+  // Sword (right hand)
+  px(33, 22, metalLight); px(33, 23, metalLight); px(33, 24, metalLight);
+  px(33, 25, metalLight); px(33, 26, metalLight);
+  px(33, 27, '#cc9933'); // hilt
+  px(32, 27, '#cc9933');
+  px(34, 27, '#cc9933');
+  px(33, 20, '#ffffff'); px(33, 21, '#ddddee'); // blade tip
+
+  // Legs
+  for (let y = 28; y <= 35; y++) {
+    px(20, y, armorDark); px(21, y, armor); px(22, y, armor);
+    px(25, y, armor); px(26, y, armor); px(27, y, armorDark);
+  }
+  // Knee plates
+  px(21, 31, armorLight); px(22, 31, armorLight);
+  px(25, 31, armorLight); px(26, 31, armorLight);
+
+  // Boots
+  for (let y = 36; y <= 38; y++) {
+    [19,20,21,22,23].forEach(x => px(x, y, armorDark));
+    [24,25,26,27,28].forEach(x => px(x, y, armorDark));
+  }
+  [20,21,22].forEach(x => px(x, 36, armor));
+  [25,26,27].forEach(x => px(x, 36, armor));
+
+  // Red scarf flowing
+  px(18, 14, '#ff4444'); px(17, 15, '#ff4444'); px(16, 16, '#ff4444');
+  px(15, 17, '#ee3333'); px(14, 18, '#ee3333'); px(13, 19, '#dd2222');
+}
+
+function drawChibiRex() {
+  const c = document.getElementById('chibiRex');
+  const ctx = c.getContext('2d');
+  const s = 6;
+
+  ctx.fillStyle = '#1a1a2e';
+  ctx.fillRect(0, 0, 288, 288);
+
+  const px = (x, y, col) => drawPixel(ctx, x, y, col, s);
+
+  // -- Chibi Rex (Vanguard) --
+  // Big head (16px tall), small body, oversized shield
+
+  const hair = '#8b2020';
+  const hairLight = '#b03030';
+  const skin = '#f0c8a0';
+  const skinShadow = '#d4a878';
+  const armor = '#cc3333';
+  const armorLight = '#e05555';
+  const armorDark = '#8b1a1a';
+  const eye = '#40e0ff';
+  const eyeWhite = '#ffffff';
+  const dark = '#1a0a0a';
+  const metal = '#667788';
+  const metalLight = '#8899aa';
+  const blush = '#ff9999';
+
+  // --- BIG HEAD ---
+  // Hair top
+  for (let x = 16; x <= 31; x++) px(x, 3, hair);
+  for (let x = 15; x <= 32; x++) px(x, 4, hair);
+  for (let x = 14; x <= 33; x++) px(x, 5, hair);
+  for (let x = 14; x <= 33; x++) px(x, 6, hair);
+  // Hair highlights
+  [18,19,20,27,28].forEach(x => px(x, 4, hairLight));
+  [17,18,19,28,29].forEach(x => px(x, 5, hairLight));
+
+  // Face area
+  for (let y = 7; y <= 14; y++) {
+    for (let x = 15; x <= 32; x++) {
+      px(x, y, skin);
+    }
+  }
+  // Side hair
+  for (let y = 7; y <= 12; y++) {
+    px(14, y, hair); px(15, y, hair);
+    px(32, y, hair); px(33, y, hair);
+  }
+  // Chin
+  for (let x = 17; x <= 30; x++) px(x, 15, skinShadow);
+
+  // Big eyes (4x3 each)
+  // Left eye
+  for (let y = 9; y <= 11; y++) {
+    for (let x = 17; x <= 20; x++) px(x, y, eyeWhite);
+  }
+  px(18, 9, eye); px(19, 9, eye);
+  px(18, 10, eye); px(19, 10, '#20a0cc');
+  px(18, 11, dark); px(19, 11, dark);
+  px(17, 10, dark); // left edge
+  // Eye shine
+  px(19, 9, '#aaeeff');
+
+  // Right eye
+  for (let y = 9; y <= 11; y++) {
+    for (let x = 27; x <= 30; x++) px(x, y, eyeWhite);
+  }
+  px(28, 9, eye); px(29, 9, eye);
+  px(28, 10, eye); px(29, 10, '#20a0cc');
+  px(28, 11, dark); px(29, 11, dark);
+  px(30, 10, dark);
+  px(29, 9, '#aaeeff');
+
+  // Blush
+  px(17, 12, blush); px(18, 12, blush);
+  px(29, 12, blush); px(30, 12, blush);
+
+  // Small mouth
+  px(23, 13, '#e08080'); px(24, 13, '#e08080');
+
+  // Tiny nose
+  px(24, 11, skinShadow);
+
+  // --- SMALL BODY ---
+  // Neck
+  px(23, 16, skin); px(24, 16, skin);
+
+  // Torso (compact)
+  for (let y = 17; y <= 24; y++) {
+    for (let x = 19; x <= 28; x++) {
+      px(x, y, armor);
+    }
+  }
+  // Chest highlight
+  [22,23,24,25].forEach(x => px(x, 18, armorLight));
+  [23,24].forEach(x => px(x, 19, armorLight));
+  // Belt
+  for (let x = 19; x <= 28; x++) px(x, 25, armorDark);
+
+  // Arms (short stubby)
+  for (let y = 18; y <= 23; y++) {
+    px(17, y, armor); px(18, y, armor);
+    px(29, y, armor); px(30, y, armor);
+  }
+  px(17, 24, skin); px(18, 24, skin);
+  px(29, 24, skin); px(30, 24, skin);
+
+  // OVERSIZED SHIELD (left)
+  for (let y = 16; y <= 30; y++) {
+    for (let x = 8; x <= 17; x++) {
+      px(x, y, metal);
+    }
+  }
+  // Shield border
+  for (let y = 16; y <= 30; y++) { px(8, y, '#556677'); px(17, y, '#556677'); }
+  for (let x = 8; x <= 17; x++) { px(x, 16, '#556677'); px(x, 30, '#556677'); }
+  // Shield highlights
+  for (let y = 18; y <= 22; y++) { px(10, y, metalLight); px(11, y, metalLight); }
+  // Shield emblem (red cross)
+  px(12, 22, armor); px(13, 22, armor);
+  px(12, 23, armor); px(13, 23, armor);
+  px(11, 22, armor); px(14, 22, armor);
+  px(12, 21, armor); px(13, 21, armor);
+  px(12, 24, armor); px(13, 24, armor);
+
+  // Sword (right, oversized)
+  px(31, 15, '#ffffff'); px(31, 16, '#ddddee');
+  for (let y = 17; y <= 24; y++) px(31, y, metalLight);
+  px(31, 25, '#cc9933'); px(30, 25, '#cc9933'); px(32, 25, '#cc9933');
+
+  // Legs (short)
+  for (let y = 26; y <= 30; y++) {
+    px(20, y, armorDark); px(21, y, armor); px(22, y, armor);
+    px(25, y, armor); px(26, y, armor); px(27, y, armorDark);
+  }
+
+  // Boots
+  for (let y = 31; y <= 33; y++) {
+    [19,20,21,22].forEach(x => px(x, y, armorDark));
+    [25,26,27,28].forEach(x => px(x, y, armorDark));
+  }
+  [20,21].forEach(x => px(x, 31, armor));
+  [26,27].forEach(x => px(x, 31, armor));
+
+  // Red scarf (flowing behind)
+  px(19, 16, '#ff4444'); px(18, 17, '#ff4444');
+  px(17, 17, '#ff4444'); px(16, 18, '#ee3333');
+  px(15, 19, '#ee3333'); px(14, 20, '#dd2222');
+}
+
+drawMechRex();
+drawChibiRex();
+</script>
+
+<div class="section" style="margin-top:2rem;">
+  <h3>Which direction?</h3>
+  <div class="options">
+    <div class="option" data-choice="mech" onclick="toggleSelect(this)">
+      <div class="letter">A</div>
+      <div class="content">
+        <h3>Armored Mech-Girl</h3>
+        <p>Proportional, sleek, Nier-inspired. More serious/mature tone.</p>
+      </div>
+    </div>
+    <div class="option" data-choice="chibi" onclick="toggleSelect(this)">
+      <div class="letter">B</div>
+      <div class="content">
+        <h3>Chibi Anime</h3>
+        <p>Big head, big eyes, cute but deadly. More appealing/gacha-friendly.</p>
+      </div>
+    </div>
+  </div>
+</div>

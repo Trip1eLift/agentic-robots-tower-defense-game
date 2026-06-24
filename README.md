@@ -2,6 +2,18 @@
 
 A 2D tower defense game where you command AI-driven combat units through natural language orders. Each ARIA unit runs on a local LLM that interprets your instructions and makes autonomous decisions on the battlefield. You don't control them directly -- you give them orders, and their Anima (synthetic consciousness) decides how to execute.
 
+## Demo
+
+**[Watch gameplay video on YouTube](https://www.youtube.com/watch?v=VaTtaU1M5T0)**
+
+| Introduction | Pre-Combat Briefing |
+|:---:|:---:|
+| ![Introduction screen showing the lore of Year 2047](demo/introduction.PNG) | ![Pre-combat briefing with ARIA unit order input](demo/briefing.PNG) |
+
+| Wave 1 - First Contact | Wave 2 - Escalation |
+|:---:|:---:|
+| ![Gameplay wave 1 showing ARIA units engaging zombies](demo/gameplay1.PNG) | ![Gameplay wave 2 with larger zombie horde](demo/gameplay2.PNG) |
+
 ## Concept
 
 - Write tactical orders for each unit before combat begins
@@ -231,7 +243,9 @@ Ollama runs as a background service automatically after installation. The backen
 
 ## Running the Game
 
-### Option 1: Using the start script
+> **IMPORTANT: The backend server and LLM model must be running BEFORE you launch the game.** The Godot frontend connects to the backend over WebSocket on startup. If the backend is not running, ARIA units will have no AI and will not act.
+
+### Option 1: Using the start script (recommended)
 
 Edit `start.sh` and update the `GODOT` variable to point to your Godot executable:
 ```bash
@@ -240,35 +254,40 @@ GODOT="/path/to/your/Godot_v4.6.1-stable"
 
 Then run:
 ```bash
-# With real Ollama LLM
+# With real Ollama LLM (requires Ollama + dolphin-mistral installed)
 bash start.sh
 
 # With mock LLM (no Ollama needed, good for testing)
 bash start.sh mock
 ```
 
-Press F5 in the Godot editor to start playing.
+This script starts the backend first, waits for it to be ready, then launches Godot automatically.
 
-### Option 2: Manual startup
+### Option 2: Manual startup (two terminals)
 
-Terminal 1 -- Backend:
+**Step 1 -- Start the backend first** (Terminal 1):
 ```bash
 source .venv/bin/activate
 
-# Real LLM (requires Ollama running with dolphin-mistral)
+# With real Ollama LLM (requires `ollama serve` and dolphin-mistral pulled)
 python -m uvicorn backend.main:app --host 0.0.0.0 --port 8765
 
-# Or mock LLM
+# With mock LLM (no Ollama needed)
 USE_MOCK_LLM=true python -m uvicorn backend.main:app --host 0.0.0.0 --port 8765
 ```
 
-Terminal 2 -- Godot:
-```bash
-# Open in editor
-/path/to/godot --path godot/
+Wait until you see `Application startup complete.` before proceeding.
 
-# Or run directly (no editor)
-/path/to/godot --path godot/ --main-scene res://scenes/Main.tscn
+**Step 2 -- If using real Ollama**, make sure the model is loaded (Terminal 2, optional):
+```bash
+ollama serve           # start the Ollama daemon if not already running
+ollama pull dolphin-mistral   # only needed once
+```
+
+**Step 3 -- Launch Godot** (Terminal 2):
+```bash
+# Open in editor, then press F5 to play
+/path/to/godot --path godot/
 ```
 
 ## Running Tests

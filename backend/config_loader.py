@@ -10,6 +10,7 @@ class ConfigLoader:
         self._maps: dict = {}
         self._missions: dict = {}
         self._enemies: dict = {}
+        self._weapons: dict = {}
         self._load_all()
 
     def _load_json(self, path: Path) -> dict:
@@ -35,6 +36,12 @@ class ConfigLoader:
             cfg = self._load_json(path)
             self._missions[cfg["id"]] = cfg
 
+        weapons_dir = self._data_dir / "weapons"
+        if weapons_dir.exists():
+            for path in weapons_dir.glob("*.json"):
+                cfg = self._load_json(path)
+                self._weapons[cfg["id"]] = cfg
+
     def get_robot(self, robot_id: str) -> dict:
         if robot_id not in self._robots:
             raise KeyError(f"Robot not found: {robot_id}")
@@ -57,3 +64,11 @@ class ConfigLoader:
         if enemy_id not in self._enemies:
             raise KeyError(f"Enemy not found: {enemy_id}")
         return self._enemies[enemy_id]
+
+    def get_weapon(self, weapon_id: str) -> dict:
+        if weapon_id not in self._weapons:
+            raise KeyError(f"Weapon not found: {weapon_id}")
+        return self._weapons[weapon_id]
+
+    def get_all_weapons(self) -> list[dict]:
+        return list(self._weapons.values())

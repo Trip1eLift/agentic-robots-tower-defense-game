@@ -9,11 +9,13 @@ var _health: int = 50
 var _max_health: int = 50
 var _speed: float = 60.0
 var _damage: int = 8
-var _attack_range: float = 40.0
-var _base_target: Node2D = null  # the map node (has take_base_damage)
-var _base_position: Vector2 = Vector2.ZERO  # actual base position to walk toward
+var _attack_range: float = 45.0
+var _base_target: Node2D = null
+var _base_position: Vector2 = Vector2.ZERO
 var _current_target: Node2D = null
 var _health_bar: ProgressBar = null
+var _target_lost_timer: float = 0.0
+const TARGET_LOST_TIMEOUT = 3.0
 
 func setup(config: Dictionary, map: Node2D) -> void:
 	var stats = config["stats"]
@@ -24,10 +26,14 @@ func setup(config: Dictionary, map: Node2D) -> void:
 	_attack_range = stats["attack_range"]
 	_base_target = map
 	_base_position = map.get_base_position()
-	_current_target = map
+	_current_target = null
 	nav_agent.target_position = _base_position
+	attack_timer.wait_time = stats.get("attack_rate", 1.0)
 	attack_timer.timeout.connect(_on_attack_timer)
 	attack_timer.start()
+	_setup_health_bar()
+
+func _setup_health_bar() -> void:
 	_health_bar = ProgressBar.new()
 	_health_bar.max_value = _max_health
 	_health_bar.value = _health
@@ -44,34 +50,59 @@ func setup(config: Dictionary, map: Node2D) -> void:
 	_health_bar.add_theme_stylebox_override("fill", fill)
 	add_child(_health_bar)
 
-func _physics_process(_delta: float) -> void:
-	var robot_target = _find_nearby_robot()
+func _physics_process(delta: float) -> void:
+	# Check if current robot target is still valid
+	if _current_target != null and _current_target != _base_target:
+		if not is_instance_valid(_current_target):
+			_current_target = null
+			_target_lost_timer = 0.0
+		elif _current_target.has_method("is_alive") and not _current_target.is_alive():
+			_current_target = null
+			_target_lost_timer = 0.0
+		else:
+			var dist = global_position.distance_to(_current_target.global_position)
+			var aggro_range = _attack_range * 3.0
+			if dist > aggro_range:
+				_target_lost_timer += delta
+				if _target_lost_timer >= TARGET_LOST_TIMEOUT:
+					_current_target = null
+					_target_lost_timer = 0.0
+			else:
+				_target_lost_timer = 0.0
 
-	if robot_target:
-		# Attack nearby robot
-		var dist = global_position.distance_to(robot_target.global_position)
-		_current_target = robot_target
+	# Re-acquire target if needed
+	if _current_target == null or _current_target == _base_target:
+		var robot = _find_nearest_robot()
+		if robot:
+			_current_target = robot
+			_target_lost_timer = 0.0
+
+	# Move toward current target
+	if _current_target != null and _current_target != _base_target and is_instance_valid(_current_target):
+		var dist = global_position.distance_to(_current_target.global_position)
 		if dist <= _attack_range:
 			velocity = Vector2.ZERO
-			return
-		nav_agent.target_position = robot_target.global_position
+		else:
+			nav_agent.target_position = _current_target.global_position
+			if not nav_agent.is_navigation_finished():
+				var next_pos = nav_agent.get_next_path_position()
+				velocity = (next_pos - global_position).normalized() * _speed
 	else:
 		# Walk toward base
-		_current_target = _base_target
 		var dist = global_position.distance_to(_base_position)
 		if dist <= _attack_range:
 			velocity = Vector2.ZERO
-			return
-		nav_agent.target_position = _base_position
+		else:
+			nav_agent.target_position = _base_position
+			if not nav_agent.is_navigation_finished():
+				var next_pos = nav_agent.get_next_path_position()
+				velocity = (next_pos - global_position).normalized() * _speed
 
-	if not nav_agent.is_navigation_finished():
-		var next_pos = nav_agent.get_next_path_position()
-		velocity = (next_pos - global_position).normalized() * _speed
 	move_and_slide()
 
-func _find_nearby_robot() -> Node2D:
+func _find_nearest_robot() -> Node2D:
 	var closest: Node2D = null
-	var aggro_range := _attack_range * 3.0  # detect robots from further away
+	var aggro_range := _attack_range * 3.0
 	var closest_dist := aggro_range
 	for robot in get_tree().get_nodes_in_group("robots"):
 		if not is_instance_valid(robot):
@@ -85,17 +116,14 @@ func _find_nearby_robot() -> Node2D:
 	return closest
 
 func _on_attack_timer() -> void:
-	# Try to attack a robot in melee range
-	for robot in get_tree().get_nodes_in_group("robots"):
-		if not is_instance_valid(robot):
-			continue
-		if robot.has_method("is_alive") and not robot.is_alive():
-			continue
-		var dist = global_position.distance_to(robot.global_position)
-		if dist <= _attack_range and robot.has_method("take_damage"):
-			robot.take_damage(_damage)
-			return
-	# No robot in melee range -- attack base if close enough
+	# Attack current target only -- no looping through all robots
+	if _current_target != null and _current_target != _base_target and is_instance_valid(_current_target):
+		if _current_target.has_method("is_alive") and _current_target.is_alive():
+			var dist = global_position.distance_to(_current_target.global_position)
+			if dist <= _attack_range and _current_target.has_method("take_damage"):
+				_current_target.take_damage(_damage)
+				return
+	# No robot target in range -- attack base if close enough
 	if _base_target and is_instance_valid(_base_target):
 		var dist = global_position.distance_to(_base_position)
 		if dist <= _attack_range and _base_target.has_method("take_base_damage"):

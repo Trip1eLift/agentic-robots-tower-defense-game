@@ -22,7 +22,7 @@ var _next_enemy_id: int = 1
 var _enemy_id_map: Dictionary = {}
 var _id_enemy_map: Dictionary = {}
 var _stalemate_timer: float = 0.0
-const STALEMATE_TIMEOUT_SEC = 30.0
+const STALEMATE_TIMEOUT_SEC = 120.0
 
 func _process(delta: float) -> void:
 	if _is_wave_active and not _is_spawning:
@@ -41,6 +41,7 @@ func setup_mission(mission_id: String, map: Node) -> void:
 	_is_wave_active = false
 	_is_spawning = false
 	_mission_ended = false
+	_stalemate_timer = 0.0
 	# Clean up old robots/enemies from previous mission
 	for r in _robots:
 		if is_instance_valid(r):

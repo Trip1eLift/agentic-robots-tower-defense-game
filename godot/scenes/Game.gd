@@ -4,11 +4,21 @@ extends Node2D
 @onready var hud: CanvasLayer = $HUD
 
 func _ready() -> void:
+	print("=== GAME._ready() START ===")
 	var mission_id = CampaignManager.get_current_mission()
+	print("DEBUG mission_id='", mission_id, "'")
+
+	var mission_cfg = ConfigLoader.get_mission(mission_id)
+	print("DEBUG mission_cfg keys=", mission_cfg.keys(), " waves=", mission_cfg.get("waves", []).size())
+
+	var all_robots = ConfigLoader.get_all_robots()
+	print("DEBUG ConfigLoader.get_all_robots() count=", all_robots.size())
+
 	hud.reset()
 	hud.set_map(map)
 	GameRecorder.start_recording(mission_id)
 	GameManager.setup_mission(mission_id, map)
+	print("DEBUG setup_mission done")
 	map.base_destroyed.connect(_on_base_destroyed)
 	map.base_health_changed.connect(hud.update_base_health)
 	GameManager.wave_started.connect(hud.update_wave)
@@ -16,33 +26,45 @@ func _ready() -> void:
 	GameManager.mission_won.connect(_on_mission_won)
 	GameManager.mission_lost.connect(_on_mission_lost)
 	GameManager.kill_count_changed.connect(hud.update_kill_count)
+	print("DEBUG signals connected")
 
 	# Get player instructions from briefing (stored in CampaignManager meta)
 	var player_instructions: Dictionary = {}
 	if CampaignManager.has_meta("player_instructions"):
 		player_instructions = CampaignManager.get_meta("player_instructions")
+	print("DEBUG player_instructions keys=", player_instructions.keys())
 
-	# Wait for WebSocket connection before spawning
+	# Wait for WebSocket connection before spawning (5s timeout, then proceed anyway)
+	print("DEBUG WebSocket connected=", WebSocketClient._is_connected)
 	if not WebSocketClient._is_connected:
-		await WebSocketClient.connected
+		print("DEBUG waiting for WebSocket (max 5s)...")
+		var deadline := Time.get_ticks_msec() + 5000
+		while not WebSocketClient._is_connected and Time.get_ticks_msec() < deadline:
+			await get_tree().process_frame
+		print("DEBUG after wait: connected=", WebSocketClient._is_connected)
+		if not WebSocketClient._is_connected:
+			push_warning("Game: WebSocket connection timed out, spawning without backend")
 
 	# Only spawn robots that survived previous missions
 	var robot_configs = CampaignManager.get_alive_robots()
+	print("DEBUG get_alive_robots() count=", robot_configs.size())
 	GameManager.spawn_robots(robot_configs, player_instructions)
+	print("DEBUG spawn_robots done, robots in group=", get_tree().get_nodes_in_group("robots").size())
 
-	# Restore health/ammo from previous mission
+	# Restore health from previous mission
 	for robot in get_tree().get_nodes_in_group("robots"):
 		if is_instance_valid(robot):
 			var rid = robot.robot_id
 			var saved_hp = CampaignManager.get_robot_health(rid, robot._max_health)
-			var saved_ammo = CampaignManager.get_robot_ammo(rid, robot._ammo)
 			robot._health = saved_hp
-			robot._ammo = saved_ammo
 			if robot._health_bar:
 				robot._health_bar.value = saved_hp
 
+	print("DEBUG waiting 0.5s then starting wave...")
 	await get_tree().create_timer(0.5).timeout
+	print("DEBUG calling start_next_wave()")
 	GameManager.start_next_wave()
+	print("=== GAME._ready() END ===")
 
 func _on_base_destroyed() -> void:
 	GameManager.on_base_destroyed()
@@ -53,6 +75,7 @@ func _on_wave_completed(wave_number: int) -> void:
 	GameManager.start_next_wave()
 
 func _on_mission_won() -> void:
+	print("DEBUG _on_mission_won fired")
 	GameRecorder.stop_recording("WIN")
 	_print_recording_summary()
 	_save_robot_states()
@@ -62,6 +85,7 @@ func _on_mission_won() -> void:
 	_cleanup_and_exit()
 
 func _on_mission_lost() -> void:
+	print("DEBUG _on_mission_lost fired")
 	GameRecorder.stop_recording("LOSS")
 	_print_recording_summary()
 	_save_robot_states()
@@ -86,7 +110,7 @@ func _show_result_overlay(text: String) -> void:
 func _save_robot_states() -> void:
 	for robot in GameManager._robots:
 		if is_instance_valid(robot):
-			CampaignManager.save_robot_state(robot.robot_id, robot.get_health(), robot.get_ammo())
+			CampaignManager.save_robot_state(robot.robot_id, robot.get_health(), 0)
 
 func _print_recording_summary() -> void:
 	var s = GameRecorder.get_summary()

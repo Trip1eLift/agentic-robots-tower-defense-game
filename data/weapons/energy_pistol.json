@@ -1,0 +1,11 @@
+{
+  "id": "energy_pistol",
+  "name": "Medi-Pulse Pistol",
+  "class": "energy_pistol",
+  "type": "ranged",
+  "damage": 8,
+  "range": 60,
+  "attack_speed": 0.8,
+  "clip_size": 12,
+  "reload_time": 1.5
+}

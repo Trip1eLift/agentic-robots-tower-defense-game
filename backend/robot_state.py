@@ -8,23 +8,23 @@ class RobotState:
     robot_id: str
     health: int
     max_health: int
-    ammo: int
     position: tuple[float, float]
     current_action: Optional[str] = None
     is_alive: bool = True
+    weapon_state: Optional[dict] = None
 
 
 class RobotStateStore:
     def __init__(self):
         self._states: dict[str, RobotState] = {}
 
-    def register(self, robot_id: str, health: int, max_health: int, ammo: int, position: tuple[float, float]) -> None:
+    def register(self, robot_id: str, health: int, max_health: int, position: tuple[float, float], weapon_state: Optional[dict] = None) -> None:
         self._states[robot_id] = RobotState(
             robot_id=robot_id,
             health=health,
             max_health=max_health,
-            ammo=ammo,
             position=position,
+            weapon_state=weapon_state,
         )
 
     def get(self, robot_id: str) -> RobotState:
@@ -39,6 +39,9 @@ class RobotStateStore:
 
     def update_position(self, robot_id: str, new_position: tuple[float, float]) -> None:
         self.get(robot_id).position = new_position
+
+    def update_weapon_state(self, robot_id: str, weapon_state: dict) -> None:
+        self.get(robot_id).weapon_state = weapon_state
 
     def set_current_action(self, robot_id: str, action: str) -> None:
         self.get(robot_id).current_action = action
